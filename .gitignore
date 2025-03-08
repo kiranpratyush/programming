@@ -1,0 +1,4 @@
+rocksdb
+.DS_Store
+.vscode
+**/*.dSYM/
