@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Source file
-SRC="main.cc"
+SRC="loadImages.cc"
 
 # Output executable
-OUT="main"
+OUT="loadImages.out"
 
 # Compile
 g++ "$SRC" -o "$OUT" -lraylib -lm -ldl -lrt -lGL -pthread
