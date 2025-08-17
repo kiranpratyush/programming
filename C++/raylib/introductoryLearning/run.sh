@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Source file
-SRC="loadImages.cc"
+SRC="mouseInput.cc"
 
 # Output executable
-OUT="loadImages.out"
+OUT="mouseInput.out"
 
 # Compile
 g++ "$SRC" -o "$OUT" -lraylib -lm -ldl -lrt -lGL -pthread
