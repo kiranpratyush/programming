@@ -108,7 +108,7 @@ public:
     }
     void spawn()
     {
-        this->position = initialPosition;
+        this->position = GetMousePosition();
     }
     void update()
     {
