@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Source file
-SRC="collission.cc"
+SRC="shapeDoger.cc"
 
 # Output executable
-OUT="collission.out"
+OUT="shapeDoger.out"
 
 # Compile
 g++ "$SRC" -o "$OUT" -lraylib -lm -ldl -lrt -lGL -pthread
