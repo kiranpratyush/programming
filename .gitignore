@@ -3,3 +3,8 @@ rocksdb
 .vscode
 **/*.dSYM/
 **/*.txt
+**/*.exe
+**/*.vsidx
+**/*.ipch
+**/.vs
+**/Debug
