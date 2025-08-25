@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Iframe Test</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        background-color: #f0f2f5;
+      }
+      h1 {
+        color: #333;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      p {
+        background-color: #fff1e0;
+        border-left: 4px solid #ffa94d;
+        padding: 15px;
+        border-radius: 4px;
+        max-width: 600px;
+        text-align: left;
+        color: #555;
+      }
+      iframe {
+        border: 2px solid #ccc;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 800px;
+        height: 60vh;
+        background-color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Testing if Google.com will load in an Iframe</h1>
+
+    <p>
+      <strong>Spoiler:</strong> It won't. The iframe below will likely show a
+      blank page or a connection error. This is an intentional security feature
+      implemented by Google to prevent "clickjacking" attacks.
+    </p>
+
+    <iframe src="https://www.google.com" title="Iframe to Google"></iframe>
+  </body>
+</html>

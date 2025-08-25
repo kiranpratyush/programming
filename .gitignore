@@ -8,3 +8,4 @@ rocksdb
 **/*.ipch
 **/.vs
 **/Debug
+**/.venv
