@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include "common.h"
 #include "common_threads.h"
+
 #define nullptr NULL
 int balance = 0;
 typedef struct

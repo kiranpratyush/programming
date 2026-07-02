@@ -9,3 +9,5 @@ rocksdb
 **/.vs
 **/Debug
 **/.venv
+**/node_modules
+**/target
