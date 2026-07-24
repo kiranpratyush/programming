@@ -57,10 +57,22 @@ fn main() {
     if rectangle1.width() {
         println!("The width of the rectangle is greater than 0");
     }
-    let mut p = Point { x: 1, y: 2 };
-    let x = p.get_x();
-    *x += 1;
-    println!("{} {}", *x, p.y);
+    find_until(&vec![1, 2, 3], 4, 4);
+
+    let mut v = vec![1, 2, 3];
+    for i in &mut v {
+        v.push(*i);
+    }
+    println!("{} {} {}", v[3], v[4], v[5]);
+}
+
+fn find_until(v: &Vec<i32>, n: i32, til: usize) -> Option<usize> {
+    for i in 0..til {
+        if v[i] == n {
+            return Some(i);
+        }
+    }
+    return None;
 }
 fn area(width: u32, height: u32) -> u32 {
     width * height

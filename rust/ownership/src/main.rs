@@ -1,17 +1,16 @@
-fn first_word(s: &String) -> usize {
-    let bytes = s.as_bytes();
-    for (i, &item) in bytes.iter().enumerate() {
-        if item == b' ' {
-            return i;
-        }
-    }
-    s.len()
-}
+/*What is the difference between String and string (This is slice)
+ *
+ *
+ *
+ */
 
 fn main() {
-    let mut s = String::from("hello");
-    for &item in s.as_bytes().iter() {
-        if item == b'l' {}
-    }
-    s.push_str(" world");
+    let mut s1 = String::from("foo");
+    let s2 = "bar";
+    s1.push_str(s2);
+    println!("s2 is {s2}");
+    s1.push('l');
+    let s3 = s1 + s2;
+    println!("s2 is {}", s2);
+    println!("s2 is {}", s3);
 }
