@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Experiment.Types
 {
-   enum Season
+   public enum Season
     {
         Sprint,
         Summer,
@@ -18,9 +18,9 @@ namespace Experiment.Types
         InternalServerError = 500
     }
 
-    public class EnumLearning
+    public static class EnumLearning
     {
-        public string DescribeSeason(Season season)
+        public static string DescribeSeason(Season season)
         {
             return season switch
             {

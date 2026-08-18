@@ -3,21 +3,22 @@ Request pipeline and middleware (done)
 Use, Run, Map (done)
 middleware execution order (done)
 HttpContext(some what done)
-request/response lifecycle(some what done)
-exception-handling middleware (done)
-custom middleware (done)
-when the response has started
-Routing and endpoints
-MapGet, MapPost, etc.
-controllers
-attribute routing
-route parameters
-route constraints
-MapGroup
-endpoint metadata
-UseRouting
-endpoint selection/execution
-URL generation
+request/response lifecycle(each request goes through the series of middleware where the request and response object
+is modified and finally the response is sent)
+exception-handling middleware (UseExceptionhandling,here you can provide a path where the path will be called during exception)
+custom middleware (You can write custom middleware by implmenting invokeAsync methods)
+when the response has started (You can check by Response.HasStarted , in that case you can not add anything more to the response body or header)
+Routing and endpoints (Routing finds out the actual method needs to be called and the useEndpoint actually calls the method)
+MapGet, MapPost, etc. (This is just way of mapping your request path to endpoint executables)
+controllers (controller is also a way of providing endpoints)
+attribute routing ([HttpGet],[HttpPost] [HttpHead] etc)
+route parameters ({id} can be denoted as route parameters, use routerparameter to identify a particular resource not,incase of choosing some subset of it you can use query params)
+route constraints (do not use route constraint for validation , which sends 404 not found in case of validation failure, in this case we should send 400 Bad reqeust)
+MapGroup (This just creates a separate branch of mapping the request to a group)
+endpoint metadata (You can add extra information to endpoint)
+UseRouting (This is a middleware which actually resolves the request to which endpoint needs to be called, remember this does not call the actual callback, useEndpoint calls these)
+endpoint selection/execution (This is what useRouting does , useEndpoint calls it )
+URL generation ()
 
 Controllers and API design
 [ApiController]
