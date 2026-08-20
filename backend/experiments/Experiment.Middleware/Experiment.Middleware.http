@@ -1,6 +1,0 @@
-@Experiment.Middleware_HostAddress = http://localhost:5138
-
-GET {{Experiment.Middleware_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
