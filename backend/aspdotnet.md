@@ -33,10 +33,10 @@ idempotency
 pagination
 filtering/sorting
 Model binding and validation
-[FromBody]
-[FromQuery]
-[FromRoute]
-[FromHeader]
+[FromBody] (This binds the payload from Body)
+[FromQuery] (This binds the parameter from Query params)
+[FromRoute] (This binds the parameter from path params)
+[FromHeader] (This binds the parameter from header params)
 DataAnnotations
 automatic 400 responses
 custom validation
