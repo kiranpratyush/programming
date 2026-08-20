@@ -11,3 +11,5 @@ rocksdb
 **/.venv
 **/node_modules
 **/target
+**/obj/**
+**/bin/**

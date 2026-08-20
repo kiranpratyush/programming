@@ -157,4 +157,33 @@ HTTPS
 request limits
 graceful shutdown
 reverse proxy behavior
-Kestrel basics
+estrel basics
+
+## Authentication and Authorization
+
+Authentication:
+Authentication is a process of identifying a user.
+`IAuthenticationService` handles this process which is used in useAuthentication middleware
+Backend service can support multiple ways the authentication can be carried out . In real life a user can show may be aadhar card, or voter id card to prove it's identity . The ways authentication can be carried out is known as schemes.
+
+scheme can refer to a handler and the options to configure that specific instance of handler.
+
+- Authentication Scheme
+- Authentication Handler
+- Remote Authenticatin Handler
+- Authentication Tickets contains the claimsprincipal
+- Authenticate method in Authentication Handler
+- ChallengeAsync method if a unauthenticated user tries to access a resource
+- ForbidAsync() method if an user is not authorized to access a resource
+
+-> write a simple custom authentication handler.
+
+OIDC vs ASP.net core identity
+
+OIDC usually uses token (Jwt) based to do auth
+Cookie is generally simple to implement
+
+Explore the Asp.net core identity
+
+- write cookie based first
+- jwt based
