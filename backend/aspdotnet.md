@@ -171,6 +171,7 @@ scheme can refer to a handler and the options to configure that specific instanc
 - Authentication Scheme
 - Authentication Handler
 - Remote Authenticatin Handler
+- 
 - Authentication Tickets contains the claimsprincipal
 - Authenticate method in Authentication Handler
 - ChallengeAsync method if a unauthenticated user tries to access a resource
@@ -187,3 +188,23 @@ Explore the Asp.net core identity
 
 - write cookie based first
 - jwt based
+### Understanding 
+- Asp.net core identity provides set of apis to handle authentication and authorization
+- It exposes set of api
+  - /login
+  - /register
+- It also provides Cookies,Token (not JWT) for authentication and authorization.
+- Delegate is the delegate type, Minimal API can take arbitrary function and it tries to get the value from the DI,Request Body,Header etc.
+- During compile time or by using reflection the  raw delegate type is converted to the RequestDelegate Type.
+- Security Sensitive operations (Password change,email change) needs to invalidate the existing cookies and token.
+- SecurityStampValidator checks every 30 mins (configurable) checks if the security stamp matches the cookie
+
+What I understood: 
+Asp.net  core identity provides endpoints and api configuration to handle token and cookie based authentication and authorization.
+I have integrated with EFCore the implementation to support register,login and then protect the end points.
+I am going to ignore the Scaffold Identity (because it provides the screen of the login etc.)
+
+
+### Using ASP.NET core identity set up initial auth  set up 
+0. Configure identity for SPA and first with inmemory set up (Done)
+1. Configure identity with a postgres database
