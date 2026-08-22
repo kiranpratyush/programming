@@ -204,7 +204,29 @@ Asp.net  core identity provides endpoints and api configuration to handle token 
 I have integrated with EFCore the implementation to support register,login and then protect the end points.
 I am going to ignore the Scaffold Identity (because it provides the screen of the login etc.)
 
+Add custom userdata to identity to register (Done)
+You can create a custom User inheriting from IdentityUser, and then use it with userManager to do the register with the backing store . Same as the curretn flow.
+
+Identity and EF core  migrations : This is just keeping your database models with the code models in sync.
+
+Identity model is not a single giant model(class) it simply tells the umbrella of the models.
+Like.
+User <--- It can be one table 
+Role <--- It can be another table 
+UserClaims <--- It can be another table 
+
+Other details can be understood later. (So skipping)
+
+Understand that a claimsPrincipal (User)
+can contain multiple claimsIdentity
+each claimsIdentity can contain multiple claims (key value pairs)
+
+The SchemeHandler does the parsing,updating the response context etc
+The identity core is a full infrastructure which manages the login register etc.
+
 
 ### Using ASP.NET core identity set up initial auth  set up 
 0. Configure identity for SPA and first with inmemory set up (Done)
 1. Configure identity with a postgres database
+2. TODO check EFCORE and inspect what is the actual tables are getting created.
+3. TODO configure cookie authentication first and understand where the identity core fits into

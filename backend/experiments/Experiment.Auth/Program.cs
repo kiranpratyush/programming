@@ -1,24 +1,27 @@
+using Experiment.Auth.Models;
 using Experiment.Auth.Repository;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddControllers();
 builder.Services.AddDbContext<ApplicationDbContext>(
     options => options.UseInMemoryDatabase("AppDb")
 );
 builder.Services.AddAuthorization();
-builder.Services.AddIdentityApiEndpoints<IdentityUser>(
-)
-       .AddEntityFrameworkStores<ApplicationDbContext>();
+builder.Services.AddIdentity<User, IdentityRole>(options =>
+{
+
+});
 
 var app = builder.Build();
 
-app.MapIdentityApi<IdentityUser>();
+app.MapIdentityApi<User>();
 
 app.MapGet("/", () => "Hello World!").RequireAuthorization();
 
-app.MapPost("/logout", async (SignInManager<IdentityUser> signInManger, [FromBodyAttribute] object? empty) =>
+app.MapPost("/logout", async (SignInManager<User> signInManger, [FromBodyAttribute] object? empty) =>
 {
     if(empty != null)
     {
@@ -27,5 +30,6 @@ app.MapPost("/logout", async (SignInManager<IdentityUser> signInManger, [FromBod
     }
     return Results.Unauthorized();
 });
+app.MapControllers();
 
 app.Run();
