@@ -171,7 +171,7 @@ scheme can refer to a handler and the options to configure that specific instanc
 - Authentication Scheme
 - Authentication Handler
 - Remote Authenticatin Handler
-- 
+-
 - Authentication Tickets contains the claimsprincipal
 - Authenticate method in Authentication Handler
 - ChallengeAsync method if a unauthenticated user tries to access a resource
@@ -188,32 +188,34 @@ Explore the Asp.net core identity
 
 - write cookie based first
 - jwt based
-### Understanding 
+
+### Understanding
+
 - Asp.net core identity provides set of apis to handle authentication and authorization
 - It exposes set of api
   - /login
   - /register
 - It also provides Cookies,Token (not JWT) for authentication and authorization.
 - Delegate is the delegate type, Minimal API can take arbitrary function and it tries to get the value from the DI,Request Body,Header etc.
-- During compile time or by using reflection the  raw delegate type is converted to the RequestDelegate Type.
+- During compile time or by using reflection the raw delegate type is converted to the RequestDelegate Type.
 - Security Sensitive operations (Password change,email change) needs to invalidate the existing cookies and token.
 - SecurityStampValidator checks every 30 mins (configurable) checks if the security stamp matches the cookie
 
-What I understood: 
-Asp.net  core identity provides endpoints and api configuration to handle token and cookie based authentication and authorization.
+What I understood:
+Asp.net core identity provides endpoints and api configuration to handle token and cookie based authentication and authorization.
 I have integrated with EFCore the implementation to support register,login and then protect the end points.
 I am going to ignore the Scaffold Identity (because it provides the screen of the login etc.)
 
 Add custom userdata to identity to register (Done)
 You can create a custom User inheriting from IdentityUser, and then use it with userManager to do the register with the backing store . Same as the curn flow.
 
-Identity and EF core  migrations : This is just keeping your database models with the code models in sync.
+Identity and EF core migrations : This is just keeping your database models with the code models in sync.
 
 Identity model is not a single giant model(class) it simply tells the umbrella of the models.
 Like.
-User <--- It can be one table 
-Role <--- It can be another table 
-UserClaims <--- It can be another table 
+User <--- It can be one table
+Role <--- It can be another table
+UserClaims <--- It can be another table
 
 Other details can be understood later. (So skipping)
 
@@ -400,8 +402,62 @@ The most useful distinction to retain is:
 
 
 
-### Using ASP.NET core identity set up initial auth  set up 
 0. Configure identity for SPA and first with inmemory set up (Done)
-1. Configure identity with a postgres database
+1. Configure identity with a postgres database (Once have a basic understanding of EF CORE)
 2. TODO check EFCORE and inspect what is the actual tables are getting created.
 3. TODO configure cookie authentication first and understand where the identity core fits into (Done)
+
+- Identity core handles the infrastructure with the database like users , available roles , claims etc.
+- Cookie handler can only parse the cookie using the dataprotection api so that it is not tampered . Remember in multi instance application when load balancer is presnet, a set of key ring needs to be deployed so that verification can be done.
+- From the cookie it can parse the claims . later point of time we can use the claims or data and do something with database to handle all these things.
+
+Understand about OpenID Connect:
+what is OpenID connect and OAuth ?
+
+Resource owner :
+Client:
+Authorization server/Resource server:
+Back to redirect URI
+Exchange authorization code for access token
+Scope and consent
+why code not just direct token :
+AccessToken
+Id Token always JWT
+
+How the authentication process works here ?
+
+Understand about JWT Tokens:
+JWT contains three parts
+Header.Payload.Signature
+Header: encoded in base64 format, contains metadata about the cryptographic algorithms used to secure its contents.
+Claim formats of JWT
+different key value pairs of reserved claim are present for oauth
+like iss , aud when actually implementing it check what are the fields can be verified. (no need to go deep into this right now as it won't provide much return here.)
+
+Delegated Authorization : When a user specific token is used to call between application API it is called delegated authorization.
+for example I get a token and call api A with that token , api A uses this token to call api B (Api A is acting on behalf of myself).
+
+Token Types:
+Do not use your own token types.
+let's say
+User -> Application (Client) --> Backend
+One way of having token is
+Application specific, Application asks for the token from Backend and then stores it. (application token)
+Another way is application can asks the token on behalf of user and store it user wise. Use this token to call to backend while doing the call. (This is delegated access token)
+
+Bearer Token VS Sender constrained access tokens
+
+- Bearer token means who ever posses the token can access it
+- Sender constrained access tokens: Sender has to provide extra proof along with token to verify that the token is originating from the authorized client , not whoever posseses it.
+
+ID Tokens : Contains claims of user information , it is always in JWT format. Don't ever use this token to authorize the backend.
+
+**WWW-Authenticate header field (Section 11.6.1) containing at least one challenge applicable to the target resource. (When only get time read it no hurry)**
+
+What is PKCE ? (TODO)
+
+https://www.youtube.com/watch?v=5FrA0UzV1Aw
+
+Backend for frontend security architecture (BFF) : Key idea is don't store the access token in browser storage , in one way is to store the jwt token in the backend , and use cookies in browser.
+
+Implement one OIDC/ OAuth flow in ASP.NET core
