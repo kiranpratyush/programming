@@ -237,7 +237,20 @@ The identity core is a full infrastructure which manages the login register etc.
 - Cookie handler can only parse the cookie using the dataprotection api so that it is not tampered . Remember in multi instance application when load balancer is presnet, a set of key ring needs to be deployed so that verification can be done.
 - From the cookie it can parse the claims . later point of time we can use the claims or data and do something with database to handle all these things.
 
-Understand about OpenID Connect: (Next)
+Understand about OpenID Connect:
+what is OpenID connect and OAuth ?
+
+Resource owner :
+Client:
+Authorization server/Resource server:
+Back to redirect URI
+Exchange authorization code for access token
+Scope and consent
+why code not just direct token :
+AccessToken
+Id Token always JWT
+
+How the authentication process works here ?
 
 Understand about JWT Tokens:
 JWT contains three parts
@@ -268,6 +281,8 @@ ID Tokens : Contains claims of user information , it is always in JWT format. Do
 **WWW-Authenticate header field (Section 11.6.1) containing at least one challenge applicable to the target resource. (When only get time read it no hurry)**
 
 What is PKCE ? (TODO)
+
+https://www.youtube.com/watch?v=5FrA0UzV1Aw
 
 Backend for frontend security architecture (BFF) : Key idea is don't store the access token in browser storage , in one way is to store the jwt token in the backend , and use cookies in browser.
 
