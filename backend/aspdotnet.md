@@ -24,7 +24,7 @@ Controllers and API design
 [ApiController]
 ControllerBase
 ActionResult<T>
-status codes
+status codes (This is just mapping the status code Typed Status code)
 headers
 query/path/body parameters
 REST resource design
@@ -205,7 +205,7 @@ I have integrated with EFCore the implementation to support register,login and t
 I am going to ignore the Scaffold Identity (because it provides the screen of the login etc.)
 
 Add custom userdata to identity to register (Done)
-You can create a custom User inheriting from IdentityUser, and then use it with userManager to do the register with the backing store . Same as the curretn flow.
+You can create a custom User inheriting from IdentityUser, and then use it with userManager to do the register with the backing store . Same as the curn flow.
 
 Identity and EF core  migrations : This is just keeping your database models with the code models in sync.
 
@@ -224,9 +224,184 @@ each claimsIdentity can contain multiple claims (key value pairs)
 The SchemeHandler does the parsing,updating the response context etc
 The identity core is a full infrastructure which manages the login register etc.
 
+Without ASP.NET Core Identity, AddAuthentication() gives me the authentication mechanism, but I must build my own user store, user/role management, credential validation, and logic for constructing the ClaimsPrincipal. With ASP.NET Core Identity, Microsoft provides that user/role/credential infrastructure and integrates it with ASP.NET Core authentication.
+
+
+### Understand about the Cookie and then create a simple endpoint for login with out ASP.NET core identity. (Done)
+Server adds the cookie data in the response header, and browser stores it and sends it in subsequent requests.
+Cookie can be a session cookie or persistent cookie (which is defined my Expires or Max-Age)
+Server can define Domain which tells that on which domain the cookies will be attached.
+Some attributes secure,httponly are there to make sure where cookies are available.
+cookies prefixes are browser level constraints embedded in cookie name.
+
+Authentication produces a `ClaimsPrincipal`.
+
+Authorization evaluates that `ClaimsPrincipal` against policies/requirements.
+
+**`ClaimsPrincipal` is the central authentication representation**
+
+  * Contains one or more `ClaimsIdentity` objects.
+  * Claims can represent name, role, permissions, tenant, etc.
+  * `HttpContext.User` is the `ClaimsPrincipal` available to the application.
+
+* **Cookie Authentication**
+
+  * `SignInAsync()` takes your `ClaimsPrincipal`.
+  * The cookie authentication handler creates an `AuthenticationTicket`.
+  * The ticket contains the principal and authentication properties.
+  * The ticket is protected and written into the authentication cookie.
+
+* **The browser stores the authentication state**
+
+  * You don't need to store the `ClaimsPrincipal` in your database for basic cookie authentication.
+  * The browser sends the cookie on subsequent applicable requests.
+  * The server reconstructs the `ClaimsPrincipal` from the cookie.
+
+* **ASP.NET Core Data Protection**
+
+  * Provides cryptographic protection for data.
+  * Cookie authentication uses it to protect the authentication ticket.
+  * It uses a **key ring** containing cryptographic keys.
+  * The server needs access to the appropriate keys to unprotect cookies.
+  * In multi-instance production deployments, instances generally need a shared/persistent key ring.
+
+* **Cookie validation is not the same as user validation**
+
+  * Data Protection establishes that the protected ticket can be successfully unprotected and has not been tampered with.
+  * It does **not** inherently ask the database whether the user is still allowed to exist.
+  * Therefore, a cookie can be cryptographically valid while the user's account state has changed.
+  * One implementation is Security stamp check to invalidate the cookie
+
+* **Cookie expiration**
+
+  * The authentication ticket can have an expiration time.
+  * Once expired, the cookie should no longer authenticate the request.
+
+* **Logout**
+
+  * `SignOutAsync()` tells the browser to remove the authentication cookie.
+  * This handles normal logout.
+  * It does not necessarily invalidate a stolen/copied cookie that is still cryptographically valid.
+
+* **Immediate revocation is a different problem**
+
+  * To revoke an already-issued cookie, the server needs some way to know that the cookie/user/session has been revoked.
+  * Examples: security stamps, session IDs, token/session versions, revocation stores, etc.
+
+* **ASP.NET Core Identity**
+
+  * Identity is much larger than cookie authentication.
+  * It provides infrastructure for:
+
+    * Users
+    * Passwords/password hashing
+    * Roles
+    * Claims
+    * User stores
+    * Lockout
+    * Email confirmation
+    * Password reset
+    * Security stamps
+    * Sign-in management
+  * Identity ultimately still works with `ClaimsPrincipal` and authentication mechanisms.
+
+* **Without Identity**
+
+  * You are responsible for things such as:
+
+    * Finding the user.
+    * Validating credentials.
+    * Constructing claims.
+    * Managing roles/claims.
+    * Deciding how users are stored.
+    * Implementing revocation if required.
+  * Then you can give the resulting `ClaimsPrincipal` to cookie authentication.
+
+* **With Identity**
+
+  * `UserManager` handles user-related operations.
+  * `SignInManager` handles sign-in-related operations.
+  * `RoleManager` handles roles.
+  * Identity can construct/manage the authentication state instead of you implementing all of that infrastructure yourself.
+
+* **`[Authorize]`**
+
+  * Runs during the authorization stage, after authentication has established `HttpContext.User`.
+  * It normally evaluates claims/roles/policies against that principal.
+  * `[Authorize(Roles = "Administrator")]` can therefore work directly from the role claim.
+
+* **Database-backed authorization**
+
+  * If authorization depends on current database state, you can implement a custom authorization requirement/handler.
+  * Example:
+
+    ```text
+    Is authenticated
+        +
+    Has Administrator role
+        +
+    Does database say user can modify Order 123?
+    ```
+  * The custom `AuthorizationHandler` can query the database and call `context.Succeed(...)` when the requirement is satisfied.
+
+* **Security stamp**
+
+  * Identity maintains a security stamp representing relevant security state for a user.
+  * Authentication state can contain the stamp.
+  * Identity's security-stamp validator can compare the authenticated state with the user's current security stamp from the Identity store.
+  * The default validation interval is typically **30 minutes**, so this is periodic rather than a database check on every request.
+  * Changing the security stamp can therefore invalidate existing authentication state when the validator detects the mismatch.
+
+* **The overall architecture to remember**
+
+```text
+                    ASP.NET Core Identity
+                 ┌─────────────────────────┐
+                 │ Users                   │
+                 │ Passwords               │
+                 │ Roles                   │
+                 │ Claims                  │
+                 │ Security stamps         │
+                 │ SignInManager           │
+                 │ UserManager             │
+                 └───────────┬─────────────┘
+                             ↓
+                       ClaimsPrincipal
+                             ↓
+                    Authentication
+                             ↓
+                 CookieAuthenticationHandler
+                             ↓
+                    AuthenticationTicket
+                             ↓
+                    Data Protection
+                             ↓
+                       Key Ring
+                             ↓
+                          Cookie
+                             ↓
+                         Browser
+```
+
+The most useful distinction to retain is:
+
+**Identity manages the user's security/account state.**
+
+**Authentication establishes the `ClaimsPrincipal`.**
+
+**Cookie Authentication transports that authentication state between requests.**
+
+**Data Protection cryptographically protects the authentication ticket.**
+
+**Authorization decides whether the authenticated principal is allowed to perform an operation.**
+
+**Custom authorization handlers are where application-specific authorization logic, including database-backed rules, can be plugged in.**
+
+
+
 
 ### Using ASP.NET core identity set up initial auth  set up 
 0. Configure identity for SPA and first with inmemory set up (Done)
 1. Configure identity with a postgres database
 2. TODO check EFCORE and inspect what is the actual tables are getting created.
-3. TODO configure cookie authentication first and understand where the identity core fits into
+3. TODO configure cookie authentication first and understand where the identity core fits into (Done)
