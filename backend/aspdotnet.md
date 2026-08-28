@@ -461,3 +461,10 @@ https://www.youtube.com/watch?v=5FrA0UzV1Aw
 Backend for frontend security architecture (BFF) : Key idea is don't store the access token in browser storage , in one way is to store the jwt token in the backend , and use cookies in browser.
 
 Implement one OIDC/ OAuth flow in ASP.NET core
+
+## Authorization 
+
+Roles: What groups a claims principal is part of 
+Claims : What the user principal claims to be 
+Policy : What are the requirements to be authorized (multiple claims and Roles)
+
