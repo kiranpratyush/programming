@@ -468,3 +468,21 @@ Roles: What groups a claims principal is part of
 Claims : What the user principal claims to be 
 Policy : What are the requirements to be authorized (multiple claims and Roles)
 
+## Some security topics 
+### CSRF attacks (CROSS SITE REQUEST FORGERY ATTACKS)
+- First understand how does csrf works and try to build a small prototype of it.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### After all these understand TLS part and try to understand How TCP connections happen with Wireshark.
