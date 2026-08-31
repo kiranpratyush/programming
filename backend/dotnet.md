@@ -114,7 +114,7 @@ memory dumps
 GC diagnostics
 Performance
 allocations
-boxing
+boxing (allocating value type to heap memory like int to object, and unboxing is to extract the heap content to value types.)
 pooling
 ArrayPool<T>
 Span<T>
