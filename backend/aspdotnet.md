@@ -71,13 +71,13 @@ logging scopes
 log levels
 correlation IDs
 avoiding sensitive data in logs
-Authentication
-JWT bearer authentication
+Authentication (Done)
+JWT bearer authentication (Done)
 claims
 authentication schemes
-OpenID Connect basics
-OAuth2 concepts
-access token vs ID token
+OpenID Connect basics (Done)
+OAuth2 concepts (Done)
+access token vs ID token (Done)
 Authorization
 [Authorize]
 roles

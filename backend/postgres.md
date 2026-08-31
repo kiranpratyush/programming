@@ -1,4 +1,8 @@
 ## Document all the learning experience here (Once the Md file is substantially large put it into the Obsidian)
+1. Keep this document well documented iteratively so that you can come here and come upto the speed in no time
+2. Don't jump between topics, even if you do come here and update what ever your learnt
+
+
 
 ### What are the concepts needs to be covered.
 - Just cover what ART of Postgres does
@@ -40,7 +44,7 @@ set
 - In Postgres "FROM" is optional, you can use like select 1; or select now(); etc
 - Fetch first n rows only : Is an official standard of sql of limit N.
 - Why it is not recommended to do select * 
-  -  What is a Toast mechanism in postgres https://www.postgresql.org/docs/current/storage-toast.html
+  -  What is a Toast mechanism in postgres https://www.postgresql.org/docs/current/storage-toast.html understand and write something about it , take x premium tomorrow sunday 30th august 2026
   -  It is better to be explicit on the name of the column getting retrieved
 -  Visiblity rule of select alias (select name as name2) name2 is an alias.
    -  FROM, WHERE,GROUP BY, HAVING,JOIN : is executed first before SELECT. hence alias is not available here
@@ -55,3 +59,22 @@ set
 - (TODO) https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-FROM this is next read to understand join,from clause etc.
 - NULL does not mean nothing , It means UNKNOWN, whatever comparison with UNKNOWN produces UNKNOWN
 - I have to start reading from WHERE again at least to understand the the not exists , what is the distinction of where , how it works as a filter.
+- That said we always try to keep the where clause simple to make sure the indexing is used properly (What does it mean).
+- with Where we can add and clause so that when the first condition fails it get's short circuted.
+- SQL uses three valued logic (true,false,unknown)
+- not exists just filters if the row was selected or not. You can simply select anything may be select 1 from table where some condition , then not exists filters the row out
+- You can use order by with custom conditions like custom comparitor in c++ using CASE when status ='Power failure' then 1 else 2 
+- Try to understand the explain command and try to read the query planner execution
+- What is table inheritance hierarchy
+ - This is equivalent of inheritance of OOP . You can create a parent table and child table can inherit from the parent table
+ - You can put additional constrain on join also for example join on x.num=y.num and y.value = 3;
+ - I have studied till sub queries, start with https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-SUBQUERIES (Table functions)
+
+
+## TODOS
+https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-FROM
+later get a glimpse of date/time functions and operators (Understand this when going through the details of data type)
+https://www.postgresql.org/docs/current/storage-toast.html (Why it is not recommended to do select *)
+Why not to use offset,and how to implement pagination
+Lateral join query what is does
+Indexing
