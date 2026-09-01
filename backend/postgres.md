@@ -82,6 +82,15 @@ Indexing
 
 ## Postgres chapter 7 (september 1st to 4th)
 
+The general syntax is
+[With something][select list exptressions] from [table reference,[table reference]]
+SELECT a.\* FROM (my_table AS a JOIN your_table AS b ON ...) AS c : a is not available after the parenthesis.
+
+Status:
+Table function :
+I have understood that table function can be part of from clause
+They can be combined like table alias unset(Array[1,2,3]) as table
+
 SELECT
 FROM
 WHERE
