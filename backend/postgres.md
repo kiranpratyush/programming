@@ -69,12 +69,9 @@ set
 - What is table inheritance hierarchy
 - This is equivalent of inheritance of OOP . You can create a parent table and child table can inherit from the parent table
 - You can put additional constrain on join also for example join on x.num=y.num and y.value = 3;
-- I have studied till sub queries, start with https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-SUBQUERIES (Table functions)
 
 ## TODOS
 
-https://www.postgresql.org/docs/current/queries-table-expressions.html#QUERIES-FROM
-later get a glimpse of date/time functions and operators (Understand this when going through the details of data type)
 https://www.postgresql.org/docs/current/storage-toast.html (Why it is not recommended to do select \*)
 Why not to use offset,and how to implement pagination
 Lateral join query what is does
@@ -90,6 +87,43 @@ Status:
 Table function :
 I have understood that table function can be part of from clause
 They can be combined like table alias unset(Array[1,2,3]) as table
+CTE
+
+Data-modifying WITH
+
+1. CTE can contain:
+   INSERT / UPDATE / DELETE / MERGE
+
+2. RETURNING creates the CTE's output rows.
+
+3. Other parts should consume RETURNING
+   to observe those changes.
+
+4. DML CTEs run exactly once and to completion.
+
+5. Sibling statements share the same snapshot;
+   don't assume execution ordering.
+
+6. Never design sibling statements to modify
+   the same row.
+
+Data-modifying WITH
+
+1. CTE can contain:
+   INSERT / UPDATE / DELETE / MERGE
+
+2. RETURNING creates the CTE's output rows.
+
+3. Other parts should consume RETURNING
+   to observe those changes.
+
+4. DML CTEs run exactly once and to completion.
+
+5. Sibling statements share the same snapshot;
+   don't assume execution ordering.
+
+6. Never design sibling statements to modify
+   the same row.
 
 SELECT
 FROM
