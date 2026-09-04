@@ -235,3 +235,379 @@ ROW_NUMBER
 RANK
 DENSE_RANK
 pagination basics
+
+## Chapter 7 backend mastery exercises
+
+Reference: https://www.postgresql.org/docs/current/queries.html
+
+The exercises below follow Chapter 7, but they are ordered by usefulness for backend work rather than by documentation section. Continue using the existing `customers`, `orders`, and `order_items` practice database unless an exercise explicitly asks for another table.
+
+Priority meanings:
+
+- **Core**: expected in day-to-day backend development. Complete these without hints.
+- **Useful**: common enough that a backend developer should recognize and apply it.
+- **Advanced**: understand the purpose and complete once; memorizing every detail is unnecessary.
+
+For every API exercise:
+
+1. Write and run the SQL directly before adding it to C#.
+2. State what one row represents at every query stage.
+3. Select explicit columns; do not use `SELECT *` in the API query.
+4. Use parameters for every client-supplied value.
+5. Give the final result a deterministic order.
+6. Test normal results, no results, nulls, ties, and boundary values.
+7. Pass the request cancellation token to every asynchronous Npgsql call.
+8. Inspect important queries with `EXPLAIN (ANALYZE, BUFFERS)` after first proving correctness.
+
+### Completed foundation
+
+- [x] **Exercise 1 — Customer order history:** inner joins, filtering, grouping, aggregate order totals, ordering, and `LIMIT`.
+- [x] **Exercise 2 — Customer order summary:** left join, derived table, optional status filter, aggregation, `COUNT(DISTINCT ...)`, `COALESCE`, and null handling.
+
+### Phase 1 — Filtering and query semantics
+
+#### Exercise 3 — Build an order search endpoint (Core)
+
+Implement `GET /orders` with optional `status`, `customerId`, `placedFrom`, `placedTo`, `minimumTotal`, and `maximumTotal` filters.
+
+Practice:
+
+- Build optional predicates safely with parameters.
+- Use `WHERE` for row-level filters and `HAVING` for filters that depend on an aggregate.
+- Treat the time interval as half-open: `placed_at >= from AND placed_at < to`.
+- Decide and document what a missing parameter means.
+- Return zero rows rather than treating an empty result as an error.
+
+Verify:
+
+- Supplying no filters returns every order.
+- Each filter works alone and in combination.
+- Orders exactly at the lower bound are included and orders exactly at the upper bound are excluded.
+- `minimumTotal` does not accidentally filter individual line items before the order total is calculated.
+
+#### Exercise 4 — Find customers with and without matching orders (Core)
+
+Write two versions of each query below: one using `EXISTS`/`NOT EXISTS`, and one using a join.
+
+- Customers who have at least one shipped order.
+- Customers who have never placed an order.
+- Customers who placed orders but have never placed a cancelled order.
+
+Practice:
+
+- Correlated subqueries.
+- `EXISTS` as a test for the existence of a row, independent of its selected value.
+- The difference between `NOT EXISTS` and `NOT IN` when nulls are possible.
+- Avoiding duplicated customers from a one-to-many join.
+
+#### Exercise 5 — Prove the `ON` versus `WHERE` outer-join difference (Core)
+
+Starting from the customer summary, apply `status = 'shipped'` first inside the `LEFT JOIN ... ON` condition and then in the outer `WHERE` clause.
+
+Deliver:
+
+- Both queries and their results.
+- A written explanation of why one retains customers without shipped orders and the other removes them.
+- A third correct version that pre-filters orders in a derived table.
+
+This is a critical backend skill because optional relationship filters frequently turn outer joins into accidental inner joins.
+
+### Phase 2 — Result shape, aliases, and distinct rows
+
+#### Exercise 6 — Design a stable API projection (Core)
+
+Create `GET /orders/{orderId}` returning an order header and calculated fields such as `lineCount`, `itemCount`, and `totalAmount`.
+
+Practice:
+
+- Explicit select-list items.
+- Expressions and API-friendly column labels.
+- `CASE`, `COALESCE`, and type casts in the select list.
+- The visibility of input column names versus output aliases.
+- Mapping nullable and non-nullable result columns correctly in C#.
+
+Verify that changing the physical column order in a table would not change the API response mapping.
+
+#### Exercise 7 — Latest order per customer (Core)
+
+Return at most one latest order for every customer, including customers with no orders.
+
+Implement and compare:
+
+1. `DISTINCT ON (customer_id)` with a matching `ORDER BY`.
+2. `ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY placed_at DESC, id DESC)`.
+3. `LEFT JOIN LATERAL (...) ORDER BY ... LIMIT 1`.
+
+Verify:
+
+- Ties in `placed_at` always pick the same order because `id` is the tiebreaker.
+- Customers without orders are retained.
+- Explain which version you find most readable and inspect their execution plans.
+
+### Phase 3 — Aggregation and reporting
+
+#### Exercise 8 — Operational order dashboard (Core)
+
+Implement `GET /reports/orders-by-status` for a supplied date range. Return one row per status containing order count, distinct customer count, item count, revenue, average order value, and latest order time.
+
+Practice:
+
+- `GROUP BY` and aggregate functions.
+- Conditional aggregation with `FILTER (WHERE ...)`.
+- Avoiding incorrect counts after a one-to-many join.
+- `HAVING` to retain only groups meeting an aggregate threshold.
+- Defining a precise result grain before writing the query.
+
+#### Exercise 9 — Multi-level sales report (Useful)
+
+Produce totals at all of these levels in one query:
+
+- `(order_date, status)`
+- `(order_date)`
+- `(status)`
+- Grand total
+
+Use `GROUPING SETS`, then reproduce a suitable version with `ROLLUP`. Use `GROUPING(...)` to distinguish a subtotal null from a real null value.
+
+Backend lesson: these features are valuable for reporting endpoints, but ordinary CRUD APIs rarely need them. Understand them; do not force them into simple queries.
+
+### Phase 4 — Window functions
+
+#### Exercise 10 — Customer spending leaderboard (Core)
+
+Implement `GET /reports/customer-leaderboard` returning each customer's spending, rank, dense rank, row number, and percentage of total revenue.
+
+Practice:
+
+- Aggregate first, then apply window functions to the aggregate result.
+- Compare `ROW_NUMBER`, `RANK`, and `DENSE_RANK` when customers tie.
+- Use an empty `OVER ()` window for a grand total.
+- Keep final response ordering separate from window ordering.
+
+#### Exercise 11 — Running totals and previous-order comparison (Core)
+
+For one customer, return each order with:
+
+- Its total.
+- The previous order time and previous order total using `LAG`.
+- The change from the previous total.
+- A running lifetime spend using `SUM(...) OVER (...)`.
+
+Specify the window frame explicitly and explain why the default frame can surprise you when ordering values contain ties.
+
+#### Exercise 12 — Top three orders per customer (Core)
+
+Return each customer's three highest-value orders. Include ties in one version and force exactly three rows per customer in another.
+
+Practice:
+
+- Ranking inside a subquery or CTE.
+- Why a window-function result cannot normally be filtered in the same query level where it is computed.
+- Choosing between `ROW_NUMBER`, `RANK`, and `DENSE_RANK` from product requirements.
+
+### Phase 5 — Combining result sets
+
+#### Exercise 13 — Unified customer activity feed (Useful)
+
+Add a small `customer_notes` table or another customer event source. Build a feed that combines orders and notes into the same result shape using `UNION ALL`.
+
+Each feed row should contain `customer_id`, `event_id`, `event_type`, `occurred_at`, and `description`.
+
+Practice:
+
+- Matching column counts and compatible data types across queries.
+- Adding a discriminator such as `event_type`.
+- Applying one final `ORDER BY` to the combined result.
+- Understanding why `UNION ALL` is normally preferable when deduplication is not required.
+
+#### Exercise 14 — Compare customer sets (Useful)
+
+Use set operations to find:
+
+- Customers who ordered in either of two date ranges (`UNION`).
+- Customers who ordered in both ranges (`INTERSECT`).
+- Customers who ordered in the first range but not the second (`EXCEPT`).
+
+Repeat one query with `UNION ALL` and explain duplicate handling. Add parentheses when a branch needs its own `ORDER BY` or `LIMIT`.
+
+### Phase 6 — Sorting and production pagination
+
+#### Exercise 15 — Multi-column dynamic sorting (Core)
+
+Extend an order-list endpoint to support a small allowlist of sort modes: newest, oldest, highest value, and status then newest.
+
+Practice:
+
+- Multiple sort keys and mixed ascending/descending directions.
+- `NULLS FIRST` and `NULLS LAST`.
+- Always appending a unique tiebreaker such as `id`.
+- Mapping an API enum to predefined SQL fragments; never place unchecked user input into `ORDER BY`.
+
+#### Exercise 16 — Offset pagination and its limits (Core)
+
+Implement page-number pagination using `LIMIT` and `OFFSET`.
+
+Verify:
+
+- Every page has a deterministic order.
+- Page boundaries contain no duplicates when the data is unchanged.
+- Insert an order between fetching page 1 and page 2 and observe whether rows shift.
+- Compare `EXPLAIN (ANALYZE, BUFFERS)` for offsets 0, 100, 10,000, and 100,000 after generating enough test data.
+
+Write down why PostgreSQL still has to compute skipped rows and when offset pagination remains acceptable.
+
+#### Exercise 17 — Keyset/cursor pagination (Core)
+
+Replace the previous exercise with cursor pagination ordered by `(placed_at DESC, id DESC)`.
+
+API inputs:
+
+- `pageSize`
+- Optional `beforePlacedAt`
+- Optional `beforeOrderId`
+
+Practice:
+
+- Composite comparison: `(placed_at, id) < (@beforePlacedAt, @beforeOrderId)`.
+- Matching the comparison direction to the sort direction.
+- Fetching `pageSize + 1` rows to calculate `hasNextPage`.
+- Returning an opaque next cursor to the client.
+- Adding and validating an index beginning with the equality-filter columns and followed by the ordering columns.
+
+Verify page traversal while concurrent inserts occur. Document the tradeoff: keyset pagination supports next/previous traversal efficiently but does not naturally jump to an arbitrary page number.
+
+### Phase 7 — `VALUES`, table functions, and `LATERAL`
+
+#### Exercise 18 — Join request data with database data using `VALUES` (Useful)
+
+Given a small batch of requested order IDs and client correlation IDs, represent them as a typed `VALUES` table and left join it to `orders`.
+
+Return one row for every requested ID, including IDs that do not exist.
+
+Practice:
+
+- Treating constants as a table.
+- Giving the table and its columns aliases.
+- Explicit casts when PostgreSQL cannot infer a parameter type.
+- Preserving input-to-output correlation in a small batch request.
+
+For large or variable batches, also learn the practical alternatives: array parameters with `unnest`, JSON recordsets, temporary tables, or bulk loading.
+
+#### Exercise 19 — Expand arrays with ordinality (Useful)
+
+Pass an ordered array of order IDs, expand it with `unnest(... ) WITH ORDINALITY`, join to `orders`, and return results in the same order supplied by the caller.
+
+Verify duplicates and missing IDs. Decide whether the endpoint should retain or remove duplicate requested IDs.
+
+#### Exercise 20 — Top-N child rows with `LATERAL` (Useful)
+
+For every customer, return their latest two orders using `LEFT JOIN LATERAL`. Retain customers with no orders.
+
+Then solve the same problem with a window function and compare:
+
+- Readability.
+- Whether the query returns exactly the required grain.
+- The execution plan with an index on `(customer_id, placed_at DESC, id DESC)`.
+
+### Phase 8 — CTEs and query composition
+
+#### Exercise 21 — Refactor a complex report with CTEs (Core)
+
+Rewrite the customer leaderboard as named stages:
+
+1. Compute one row per order.
+2. Compute one row per customer.
+3. Rank customers.
+4. Select the API response shape.
+
+Practice:
+
+- Using CTEs to make grain changes explicit.
+- Naming CTEs after the result they contain rather than the operation performed.
+- Comparing the CTE version to a derived-table version for correctness and readability.
+
+Do not assume a CTE is automatically faster or that it is always materialized.
+
+#### Exercise 22 — Observe CTE materialization (Advanced)
+
+Create a CTE referenced once and another referenced twice. Compare default behavior with `MATERIALIZED` and `NOT MATERIALIZED` using `EXPLAIN (ANALYZE, BUFFERS)`.
+
+Record:
+
+- Whether predicates were pushed into the underlying scan.
+- Whether expensive work was repeated.
+- Why forcing either behavior without measuring can hurt performance.
+
+The backend goal is recognizing a performance issue during query review, not routinely adding these keywords.
+
+#### Exercise 23 — Archive rows with a data-modifying CTE (Useful, use a transaction)
+
+Create an `archived_orders` table in the practice database. In one statement, delete eligible old orders, capture them with `RETURNING`, and insert the returned rows into the archive table.
+
+Practice:
+
+- A data-modifying statement inside `WITH`.
+- Consuming the `RETURNING` rows rather than expecting the modified table itself to be the CTE result.
+- Verifying affected-row counts and rollback behavior.
+- Understanding that sibling data-modifying CTEs share a snapshot and must not be designed to modify the same row.
+
+Run this only against disposable practice data and wrap initial attempts in `BEGIN`/`ROLLBACK`.
+
+### Phase 9 — Recursive queries
+
+#### Exercise 24 — Category hierarchy API (Useful)
+
+Add a `categories(id, parent_id, name)` table and implement:
+
+- All descendants of a category.
+- The ancestor path from a category to the root.
+- A displayed depth for each result.
+- Stable depth-first or breadth-first output using the documented `SEARCH` syntax or an explicit ordering column.
+
+Practice the non-recursive seed term, `UNION ALL`, recursive term, and termination condition.
+
+#### Exercise 25 — Prevent cycles in hierarchical data (Advanced)
+
+Create deliberately cyclic practice data and make the recursive query safe using path tracking or the `CYCLE` clause.
+
+Verify:
+
+- The query terminates.
+- Cyclic rows are identifiable.
+- The returned path is useful for diagnosis.
+
+Backend lesson: a recursive query must not rely on the data being perfect unless the schema independently guarantees that cycles are impossible.
+
+### Final integration exercise
+
+#### Exercise 26 — Production-style order browsing endpoint (Core capstone)
+
+Build one endpoint that combines the most important Chapter 7 skills:
+
+- Optional parameterized filters.
+- Correct joins and aggregation.
+- A derived table or CTE with an explicitly documented grain.
+- A calculated order total.
+- Deterministic allowlisted sorting.
+- Keyset pagination and a next cursor.
+- A stable explicit response projection.
+- Cancellation propagation.
+
+Acceptance checks:
+
+- No SQL text is constructed from unchecked client values.
+- Empty, null, tied, and boundary cases are tested.
+- No duplicate or skipped rows occur while traversing unchanged data.
+- The main access path is supported by an appropriate index.
+- `EXPLAIN (ANALYZE, BUFFERS)` is saved and explained in plain language.
+- The endpoint's result shape and pagination contract are documented.
+
+### Recommended completion order
+
+Complete the exercises in this order:
+
+`3 → 4 → 5 → 6 → 7 → 8 → 10 → 11 → 12 → 15 → 16 → 17 → 21 → 26`
+
+That sequence covers the Chapter 7 knowledge most frequently needed in backend work. Then complete exercises `9, 13, 14, 18, 19, 20, 22, 23, 24, 25` for breadth.
+
+Chapter 7 is mastered for backend purposes when you can look at a requirement, define the result grain, write a correct parameterized query, make its ordering stable, choose pagination deliberately, and explain the important parts of its execution plan. Memorizing uncommon syntax is not the goal.
