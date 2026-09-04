@@ -79,6 +79,79 @@ Indexing
 
 ## Postgres chapter 7 (september 1st to 4th)
 
+### Implementation progress
+
+#### Practice database
+
+- Created the schema manually for `customers`, `orders`, and `order_items`.
+- Seeded 20 customers, 100 orders, and 200 order items.
+- Kept four customers without orders so that outer-join behavior could be tested.
+- Used constraints, foreign keys, identity columns, and indexes in the schema.
+
+#### Exercise 1: Fetch orders belonging to a customer
+
+Implemented `GET /customers/{customerId}/orders` using C# and `Npgsql`.
+
+Concepts practiced:
+
+- `INNER JOIN` between `orders` and `order_items`.
+- Filtering rows by customer and an optional starting date.
+- Grouping line items by order.
+- Calculating an order total with `SUM(quantity * unit_price)`.
+- Returning explicit columns and aliases instead of `SELECT *`.
+- Deterministic ordering and an optional `LIMIT`.
+- Supplying values through Npgsql parameters rather than interpolating them into SQL.
+- Building the SQL conditionally and assigning the completed SQL to `CommandText`.
+- Reading result columns with `NpgsqlDataReader` and mapping them to a C# response model.
+- Returning an empty collection when a customer has no orders.
+
+Verified behavior:
+
+- Customer 1 returned seven orders with their calculated totals.
+- Customer 20 returned an empty collection.
+- The date and limit parameters changed the result as expected.
+
+#### Exercise 2: Summarize orders for every customer
+
+Implemented `GET /customers/order-summary` with an optional status filter.
+
+The response contains one row per customer with the order count, total spending, and most recent order date.
+
+Concepts practiced:
+
+- `LEFT JOIN` preserves customers even when no matching order exists.
+- A derived table can prepare a result set before it is joined to another table.
+- Filtering the orders inside the derived table preserves customers without matching orders. Applying that filter carelessly after the outer join can remove the null-extended customer rows.
+- Joining an order to `order_items` changes the result grain from one row per order to one row per order item.
+- Because of that grain change, `COUNT(result.id)` counts line items rather than orders.
+- `COUNT(DISTINCT result.id)` counts each order once while leaving all item rows available for calculating total spending.
+- An alternative design is to aggregate order items inside the derived table first, producing one row per order, and then aggregate those order rows per customer.
+- `COALESCE` converts the null sum for a customer with no matching orders to zero.
+- `MAX(placed_at)` obtains the latest matching order date and naturally remains null when no order matches.
+- The final `GROUP BY` establishes one result row per customer.
+- Ordering by order count and then customer ID gives stable output.
+
+Verified behavior:
+
+- The endpoint returned all 20 customers without a status filter.
+- The four customers without orders had a zero count, zero total, and null last-order date.
+- The `pending` and `shipped` filters still returned all 20 customers; 16 had no matching orders for each filter.
+- An unknown status returned all 20 customers with zero counts, zero totals, and null dates.
+
+#### Central lesson: know the grain of every query stage
+
+Before choosing an aggregate, identify what one row represents at that point in the query:
+
+- Before joining `order_items`: one row represents one order.
+- After joining `order_items`: one row represents one order item belonging to an order.
+- After grouping by customer: one row represents one customer.
+
+Unexpected counts and totals often come from losing track of this grain. Decide whether to use a distinct aggregate or to pre-aggregate when moving between grains.
+
+#### Deferred application concerns
+
+Input validation, error responses, cancellation propagation, secret storage, and other cross-cutting API concerns are intentionally deferred while the current focus remains PostgreSQL Chapter 7.
+
 The general syntax is
 [With something][select list exptressions] from [table reference,[table reference]]
 SELECT a.\* FROM (my_table AS a JOIN your_table AS b ON ...) AS c : a is not available after the parenthesis.
