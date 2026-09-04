@@ -90,6 +90,10 @@ Status:
 Table function :
 I have understood that table function can be part of from clause
 They can be combined like table alias unset(Array[1,2,3]) as table
+LATERAL allows a subquery or FROM expression to depend on rows produced by earlier FROM items.
+so inside where,select,having inside a subquery, we can access the outer table.
+
+read again
 
 SELECT
 FROM

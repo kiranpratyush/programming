@@ -120,3 +120,6 @@ ArrayPool<T>
 Span<T>
 Memory<T>
 BenchmarkDotNet
+
+
+reading about yield return , how compiler rewrites it. understand how an ienumerable is implemented.
