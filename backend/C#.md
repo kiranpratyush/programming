@@ -49,6 +49,8 @@ source generators — much later
 
 ## C# concurrency basics (September 1st - 4th)
 
+Implement a ThreadPool in both C# and C++ refer chatgpt to iteratively make it advanced.
+
 C# Concurrency topics:
 
 Thread vs ThreadPool

@@ -1,44 +1,38 @@
 ## Document all the learning experience here (Once the Md file is substantially large put it into the Obsidian)
 
-1. Keep this document well documented iteratively so that you can come here and come upto the speed in no time
-2. Don't jump between topics, even if you do come here and update what ever your learnt
-
 ### What are the concepts needs to be covered.
 
 - Just cover what ART of Postgres does
-- Give instruction what you want in a declarative way in contrast to imperative programming language.
-  -After that, the RDBMS of your choice is going to figure out a plan then execute it, and hopefully return just the result set you wanted!
-
-DML Commands
-Insert into
-Delete where
-Update set
-DDL Commands
-Create table
-alter table
-drop table
-TCL Commands
-begin transaction
-commit
-rollback
-savepoint
-prepare commit
-commit prepared
-rollback prepared
-DCL commands
-grant
-revoke
-Postgres maintenance commands
-vacuum
-analyse
-cluster
-prepare
-execute
-explain
-listen
-notify
-lock
-set
+  DML Commands
+  Insert into
+  Delete where
+  Update set
+  DDL Commands
+  Create table
+  alter table
+  drop table
+  TCL Commands
+  begin transaction
+  commit
+  rollback
+  savepoint
+  prepare commit
+  commit prepared
+  rollback prepared
+  DCL commands
+  grant
+  revoke
+  Postgres maintenance commands
+  vacuum
+  analyse
+  cluster
+  prepare
+  execute
+  explain
+  listen
+  notify
+  lock
+  set
 
 ### Select command (Projection operator)
 
@@ -611,3 +605,38 @@ Complete the exercises in this order:
 That sequence covers the Chapter 7 knowledge most frequently needed in backend work. Then complete exercises `9, 13, 14, 18, 19, 20, 22, 23, 24, 25` for breadth.
 
 Chapter 7 is mastered for backend purposes when you can look at a requirement, define the result grain, write a correct parameterized query, make its ordering stable, choose pagination deliberately, and explain the important parts of its execution plan. Memorizing uncommon syntax is not the goal.
+
+## Database indexing from 7th september - 11th september
+
+On September 7th I went through HelloInterview database indexing chapter Here are my few learnings
+
+- Database Index is a separate datastructure to facilitate faster read access to query (It can be both range and point query)
+- I had a doubt is the datastructure stored in memory only or it can be on DISK. I now understand that they can be stored in disk. I understood the minimum unit of data which is read by the DBMS system is called pages. Don't get confused wtih the virtual memory pages and this page. Postgres by default keeps the page size to 8KB. so during each read Postgres always brings page to memory and searches for the data in that page.
+- Without indexing to find a row, we have to iterate over each pages and then find the record, this is known as sequential scan or full table scan.
+- With Index which itself is stored in chunk of pages but this datastructures allows to find a record in very less number of page search. But keep in mind that if the database record is very small scan can be more efficient that introducing an index due to random read nature of the data during search of the page.
+- Then I went ahead and read about different indexing types (different datastructures)
+- B- Tree : Each node can contain m number of TID and the number of children of each node can be m+1.
+- LSM Tree : This facilitates faster writes, only reads on primary key is faster (I have not gone much into it)
+- Hash based index : the data is hashed, and found out which bucket it needs to be placed.
+- Inverted index : for full text search. As name suggests the word to document mapping is done here
+- Geopatial index :
+  - geo hash : keep on breaking the earth map to four quadrant
+  - R-Tree: (This Two I am ignoring for now)
+  - Quad Tree : (This one also I am ignoring for now )
+  - Why composite index on B-tree still won't work, let's say we create a composite index (latitude,longitude)
+  - All the location on same latitude will be kept close, but that does not mean nearby location to a particular combination of (latitude,longitude) is kept as close.
+- Datbase optimization:
+  - Composite index : index key is composite data types (username,date)
+  - In this username is first checked for sorting and then date
+  - Cover index: putting the actual data in the leaf node, instead of keeping a pointer to avoid one more disk read.
+
+### Now what is the next thing
+
+- Go a bit deeper into B-Tree index
+- You can implement a B-Tree and simulate the insertion of a key and write to disk and read it back
+- May be database internal chapter.
+
+# Learn later
+
+- Uber H3 : https://www.uber.com/us/en/blog/h3/
+- H3: https://github.com/uber/h3
