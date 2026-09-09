@@ -636,7 +636,10 @@ On September 7th I went through HelloInterview database indexing chapter Here ar
 - You can implement a B-Tree and simulate the insertion of a key and write to disk and read it back
 - May be database internal chapter.
 
-# Learn later
+I want to implement the B-Tree (Both In memory and Disk based) in C#
 
+
+# Learn later
+What is heap only tuples
 - Uber H3 : https://www.uber.com/us/en/blog/h3/
 - H3: https://github.com/uber/h3
