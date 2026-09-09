@@ -630,6 +630,8 @@ On September 7th I went through HelloInterview database indexing chapter Here ar
   - In this username is first checked for sorting and then date
   - Cover index: putting the actual data in the leaf node, instead of keeping a pointer to avoid one more disk read.
 
+B-Tree index can provide the data in a sorted order without a separate sorting step why ?
+
 ### Now what is the next thing
 
 - Go a bit deeper into B-Tree index
