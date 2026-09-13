@@ -631,6 +631,13 @@ On September 7th I went through HelloInterview database indexing chapter Here ar
   - Cover index: putting the actual data in the leaf node, instead of keeping a pointer to avoid one more disk read.
 
 B-Tree index can provide the data in a sorted order without a separate sorting step why ?
+When a composite index is created B-Tree takes order into account to sort the data inside a node , from there two combination comes up one is ASC from left to right and NULLS first , and the DESC from right to left and NULLS Last
+
+Combining multiple indexes through Bitmap scans
+This provides the ability to scan  through multiple indexes and create a bit map in memory and do a ordered scan of pages to align with sequential access.
+Expression on indexing is just indexing on top of experessions.
+Partial indexing:
+
 
 ### Now what is the next thing
 

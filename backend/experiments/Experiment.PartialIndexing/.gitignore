@@ -1,0 +1,4 @@
+.godot/
+*.wav
+preview[0-9]*.png
+
