@@ -636,7 +636,7 @@ When a composite index is created B-Tree takes order into account to sort the da
 Combining multiple indexes through Bitmap scans
 This provides the ability to scan  through multiple indexes and create a bit map in memory and do a ordered scan of pages to align with sequential access.
 Expression on indexing is just indexing on top of experessions.
-Partial indexing:
+Partial indexing: indexing on subset of rows.if you know that the read always happens on a particular subset of rows based on column value, it is helpful to create indexing on that row.
 
 
 ### Now what is the next thing
@@ -644,7 +644,7 @@ Partial indexing:
 - Go a bit deeper into B-Tree index
 - You can implement a B-Tree and simulate the insertion of a key and write to disk and read it back
 - May be database internal chapter.
-
+before implementing b-tree in c-sharp,i will implement bst and avl trees in csharp and put it as an animation  
 I want to implement the B-Tree (Both In memory and Disk based) in C#
 
 
