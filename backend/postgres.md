@@ -634,21 +634,37 @@ B-Tree index can provide the data in a sorted order without a separate sorting s
 When a composite index is created B-Tree takes order into account to sort the data inside a node , from there two combination comes up one is ASC from left to right and NULLS first , and the DESC from right to left and NULLS Last
 
 Combining multiple indexes through Bitmap scans
-This provides the ability to scan  through multiple indexes and create a bit map in memory and do a ordered scan of pages to align with sequential access.
+This provides the ability to scan through multiple indexes and create a bit map in memory and do a ordered scan of pages to align with sequential access.
 Expression on indexing is just indexing on top of experessions.
 Partial indexing: indexing on subset of rows.if you know that the read always happens on a particular subset of rows based on column value, it is helpful to create indexing on that row.
 
+### What did I learn through out the week
+
+1. Database index is a datastructure in disk also to make the lookup of a row faster
+2. There are multiple index types which I focused mostly on B-Tree index.
+3. Other index i went through is hash based , LSM,geo hash, R-Tree etc
+4. Then composite index on B-Tree understood that the ordering matters
+5. I understood that postgres can use multiple index with bit map scan and then search for the rows in the ascending order
+6. partial index is creating an index on the subset of rows (When creating an index put a condition which can be used to create an index on specific set of rows)
+7. I spent some time on AVL tree implementation and now I have written how the rotation can happen (A blog is pending)
 
 ### Now what is the next thing
 
 - Go a bit deeper into B-Tree index
 - You can implement a B-Tree and simulate the insertion of a key and write to disk and read it back
 - May be database internal chapter.
-before implementing b-tree in c-sharp,i will implement bst and avl trees in csharp and put it as an animation  
-I want to implement the B-Tree (Both In memory and Disk based) in C#
+  before implementing b-tree in c-sharp,i will implement bst and avl trees in csharp and put it as an animation  
+  I want to implement the B-Tree (Both In memory and Disk based) in C#
 
+### Now that I have gone through the most of the expression of SQL and indexing now I can come back and focus on SQL Toolbox chapter of The Art of Postgres SQL
+
+Here from 15th september - 22nd september only spend 1 hour of time not much
+Once this is done the next step is to understand better with data modeling , I have fair bit of understanding of concurrency and isolation level as I haved read earlier, it is not new to me
+But the data modeling is important stuff. so focus on that my end of september your goal should be to finish the data modeling part as well.
 
 # Learn later
+
 What is heap only tuples
+
 - Uber H3 : https://www.uber.com/us/en/blog/h3/
 - H3: https://github.com/uber/h3
