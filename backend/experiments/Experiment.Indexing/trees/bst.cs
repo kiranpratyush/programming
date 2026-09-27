@@ -9,6 +9,15 @@
         public Node? RightChild { get; set; }
     }
 
+    /* Convert to AVL Tree 
+     
+     What is the basic idea of rotation and how to do it
+     AVL tree is self balancing binary tree.
+     Insertion or deletion may require the tree rotation
+     1st: To implement a AVL tree first store the height first
+     and then later after insertion and deletion you can use 2 bits for more
+     memory efficient approach */
+
     public class Bst
     {
         private Node? _root;
