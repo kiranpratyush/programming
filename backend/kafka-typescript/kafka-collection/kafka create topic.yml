@@ -1,0 +1,22 @@
+info:
+  name: kafka create topic
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: http://localhost:3000/topic
+  body:
+    type: json
+    data: |-
+      {
+        "topicName":"topic4",
+        "numPartition": 3
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
