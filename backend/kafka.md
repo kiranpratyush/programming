@@ -1,38 +1,37 @@
-Topic: Using a topic we can organize data streams. 
+Topic: Using a topic we can organize data streams.
 Logs stream from multiple services (producers) -> logs <--- Consumers
 Analytics stream from multiple services (producers) -> analytics <--- Consumers
 
 Topic: Organizing different data streams with a topic
 Partition: A topic can be broken into multiple partitions. data can be read from multiple partitions parallely
 offset: a message is appended into a particular partition in a topic. Offset is used to identify a message in a parition. Offset is always increasing, even if a message is deleted in a partition, that offset is not reused.
+
 - If an ordered processing of message stream is required, then a key can be attached with the message, so that messages with the same key always go to same partition.
+- Kafka streams :Kafka Streams is an application that continuously consumes records from Kafka topics, processes them, optionally maintains state, and usually writes the resulting records to another Kafka topic
 
+- Kafka connect : Kafka connect allows data trasfer between kafka and external systems using reusable connectors (resuable connector part I am not sure of which I shall clarify)
 
-TODO 
+TODO
+
 - How a consumer can consume data if it is connected to cluster after the producer has produced the data.
 - Kafka streams and Kafka connect.
-- Why kafka gives a warning about containing topics _ and collision about .
+- Why kafka gives a warning about containing topics \_ and collision about .
 - If I have multiple brokers then how can I list the topics
 - What is replication factors (Is the topic is replicated to multiple brokers)
 - If a key is used then can parition can be specified in the message. (Partition number can be specified)
 - Can an offset be specified (No)
 
-
-
-- What is kafka topics 
-- Topics is broken into partitions 
-- paritions can be assigned to multiple brokers 
+- What is kafka topics
+- Topics is broken into partitions
+- paritions can be assigned to multiple brokers
 - Messages within each partition is ordered
 - Serializers : serialize different data types to byte streams.
-- A producer message contains : 
+- A producer message contains :
   - key optional
-  - value 
+  - value
   - headers metadata
   - timestamp
 - Used kafka-topics and kafka-producer-console to send messages to kafka cluster.
-
-
-
 
 Broker, topic, partition, record, offset
 Leader/follower replicas
@@ -114,6 +113,7 @@ lock-free algorithms
 advanced CPU cache-coherence details
 
 ## Kafka topics given by chatgpt
+
 1. Kafka mental model and architecture
 2. Producers and delivery semantics
 3. Consumers, consumer groups, and rebalancing

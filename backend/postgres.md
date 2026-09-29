@@ -260,6 +260,11 @@ For every API exercise:
 
 ### Phase 1 — Filtering and query semantics
 
+The Art of Postgres (Queries) 
+
+
+
+
 #### Exercise 3 — Build an order search endpoint (Core)
 
 Implement `GET /orders` with optional `status`, `customerId`, `placedFrom`, `placedTo`, `minimumTotal`, and `maximumTotal` filters.
@@ -268,7 +273,7 @@ Practice:
 
 - Build optional predicates safely with parameters.
 - Use `WHERE` for row-level filters and `HAVING` for filters that depend on an aggregate.
-- Treat the time interval as half-open: `placed_at >= from AND placed_at < to`.
+- Treat the time interval as half-open: `placed_at >= from AND t < to`.
 - Decide and document what a missing parameter means.
 - Return zero rows rather than treating an empty result as an error.
 
@@ -668,3 +673,45 @@ What is heap only tuples
 
 - Uber H3 : https://www.uber.com/us/en/blog/h3/
 - H3: https://github.com/uber/h3
+
+## F1DB SQL practice exercises (SDE2 level, medium–hard)
+
+Dataset: https://github.com/f1db/f1db (use the PostgreSQL dump — SQLite lacks `ROLLUP`/`CUBE`).
+Tables used: `race`, `race_result`, `qualifying_result`, `driver`, `constructor`, `circuit`, `season_driver_standing`, `pit_stop`. Verify names against the schema.
+
+Rules: attempt first without running, state the plan in one sentence ("group by X, filter Y, rank by Z"), then sanity-check results against known F1 facts.
+
+### Level 1 — GROUP BY / HAVING
+
+- [ ] **1. Dominant constructors:** Constructors that won more than 50% of races in a season (season, wins, total races, win %). _Hint:_ races per season and wins per constructor-season as separate aggregates, then join.
+- [ ] **2. Consistent finishers:** Drivers with ≥ 50 starts whose average finishing position (finished races only) is under 6. _Hint:_ which condition goes in `WHERE` vs `HAVING`?
+- [ ] **3. Home heroes:** Drivers who won their home Grand Prix (driver nationality = circuit country), with count.
+
+### Level 2 — ROLLUP / CUBE
+
+- [ ] **4. Wins hierarchy:** 2010–2020 wins by constructor → driver with constructor subtotals and grand total. Label subtotals `'ALL DRIVERS'`. _Hint:_ `ROLLUP` + `GROUPING()` instead of relying on NULL.
+- [ ] **5. Podium cube:** Podiums by (decade, constructor country) with all subtotal combinations. _Hint:_ `CUBE`, decade = `(year / 10) * 10`. Bonus: emulate with `UNION ALL`.
+
+### Level 3 — INTERSECT / EXCEPT
+
+- [ ] **6. Pole but never a win:** Drivers with ≥ 1 pole position and zero race wins.
+- [ ] **7. Three-team winners:** Drivers who won for ≥ 3 different constructors. Solve with `GROUP BY/HAVING`, then with an `INTERSECT`-style approach; compare.
+- [ ] **8. Circuit orphans:** Circuits that hosted races only before 2000, and circuits only after 2000 — one result with a label column.
+
+### Level 4 — CTEs
+
+- [ ] **9. Championship margin:** Per season: champion, runner-up, points gap. Sort by smallest gap.
+- [ ] **10. Teammate head-to-head:** For each season, pair teammates (same constructor) and count races each finished ahead of the other (both finished). _Hint:_ self-join `race_result` on `race_id, constructor_id` with `a.driver_id < b.driver_id`.
+- [ ] **11. Recursive season gaps (hard):** Recursive CTE generating 1950 → current year; find years a given driver (e.g. `'fernando-alonso'`) was absent between their first and last season.
+
+### Level 5 — Window functions
+
+- [ ] **12. Win streaks (classic hard):** Longest consecutive race-win streak per driver; top 10 with start/end race. _Hint:_ gaps and islands — `ROW_NUMBER()` over all races minus `ROW_NUMBER()` over the driver's wins. Sanity check: Verstappen 10 (2023).
+- [ ] **13. Points progression:** 2021 season, per round: running totals of Verstappen and Hamilton side by side plus the gap. _Hint:_ `SUM() OVER (PARTITION BY driver ORDER BY round)`, then pivot with `CASE`.
+- [ ] **14. Position gainers:** Per race, the driver gaining the most places grid → finish; tie-break by best finish. _Hint:_ `ROW_NUMBER()` / `RANK()` partitioned by race.
+- [ ] **15. Rolling form:** Per driver, 5-race rolling average finish; flag races where it improved by ≥ 3 vs previous. _Hint:_ `AVG() OVER (ROWS BETWEEN 4 PRECEDING AND CURRENT ROW)` then `LAG()`.
+- [ ] **16. First-win age (combine everything):** For each race winner: age at first win, starts before it, and `PERCENT_RANK` by age among winners. Show youngest 10.
+
+### Reflection after each window problem
+
+Could this be solved without a window function? How painful would it be? What is the grain at each stage?

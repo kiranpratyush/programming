@@ -104,3 +104,32 @@ AsyncLocal<T>
 immutable state
 shared mutable state
 .NET memory model basics
+
+## Cancellation in Managed Threads - learn by building CancelLab (from https://learn.microsoft.com/en-us/dotnet/standard/threading/cancellation-in-managed-threads)
+
+Mini console app `CancelLab` with menu:
+[1] Polling demo (prime finder + IsCancellationRequested)
+[2] Throw demo (Task + ThrowIfCancellationRequested + OperationCanceledException)
+[3] Callback demo (Register -> CancelPendingRequests / unblock)
+[4] WaitHandle demo (ManualResetEventSlim / SemaphoreSlim.Wait(token))
+[5] Linked + Timeout demo (CreateLinkedTokenSource + CancelAfter)
+[0] Cancel with `c`, quit with `q`
+
+Pattern: `CancellationTokenSource -> Token -> listen (poll/callback/waithandle) -> Cancel() -> Dispose`
+- cooperative, not forced - listener decides how to stop gracefully
+- requesting distinct from listening - only creator can Cancel()
+- one Cancel() call notifies all copies
+- linked tokens: `CreateLinkedTokenSource(internal, external)`
+- `IsCancellationRequested` can't go back to false - tokens not reusable
+- `using var cts` / Dispose required
+
+Phases:
+0. Scaffold: `dotnet new console -n CancelLab`, menu loop with `Task.Run(DoWorkAsync(token))`
+1. Polling: long loop + SpinWait, check `IsCancellationRequested -> break + cleanup`. Try removing check -> Cancel() does nothing.
+2. Throw: `token.ThrowIfCancellationRequested()`, caller `catch (OperationCanceledException ex)` check `ex.CancellationToken`. Task -> Canceled vs Faulted.
+3. Register: `token.Register(() => client.CancelPendingRequests())`, fast sync callback, no locks/Dispose-deadlock, no manual thread/SyncContext in callback.
+4. WaitHandle: `WaitHandle.WaitAny(new[]{mre, token.WaitHandle}, timeout)`, `mres.Wait(token)`.
+5. Linked+Timeout: parent/child `CreateLinkedTokenSource(parentToken)`, `cts.CancelAfter(3000)`, one operation = one token.
+6. Library<->User: `MyLibrary.DoWorkAsync(externalToken)` makes internal linkedCts, respects external cancel.
+
+Self-checks: what if never checks token? return/break vs throw? why Cancel() blocks till callbacks finish? how to listen to 2 tokens at once?
