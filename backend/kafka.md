@@ -33,6 +33,28 @@ TODO
   - timestamp
 - Used kafka-topics and kafka-producer-console to send messages to kafka cluster.
 
+What is bootstrap server in kafka and how client connect to the kafka broker
+
+- Kafka client can connect to any broker, each broker keeps metadata of other brokers, it returns the metadata to the client which other broker contains the partition data.
+- Kafka client then connects to the actual broker to get the data
+
+Exercise 1:
+Producer and consumer (producer.ts,consumer.ts)
+Excercise 2 and Exercise 3:
+Create a topic with multiple partitions (created and observed that same key goes to same partition
+without key message is assigned in round robin fashion
+)
+Exercise 4 and Exercise 5:
+A partition in a topic is assigned to at most one consumer in a consumer group. A single partition can be assinged to multiple consumers accross consumer groups.
+for example:
+topic: topic4
+partition:0
+consumer group : groupA and groupB each having 2 consumers
+groupA_consumer1 can be assigned to topic4_partition0
+groupA_consumer2 can be assigned to topic4_partition1 (topic4_partition0 can not be assigned to groupA_consumer2 because it is aleardy assigned to consumer1)
+groupB_consumer1 can be assigned to topic4_partition0
+groupB_consumer2 can be assigned to topic4_partition1
+
 Broker, topic, partition, record, offset
 Leader/follower replicas
 Controller / KRaft at a conceptual level
