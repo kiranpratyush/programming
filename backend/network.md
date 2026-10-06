@@ -4,7 +4,7 @@
 >
 > Focus: **TCP/IP, DNS, HTTP, TLS, streaming protocols, Linux networking, load balancing, containers, Kubernetes, and production failure modes.**
 >
-> Approach: every topic should end with an observable experiment. Do not only read — use `curl`, `ss`, `ip`, `dig`, `tcpdump`, Wireshark, `nc`, `openssl`, Docker, and small C# programs.
+> Approach: every topic should end with an observable experiment. Do not only read — use `curl`, `ss`, `ip`, `dig`, `tcpdump`, Wireshark, `nc`, `openssl`, Docker, and small C#/Python programs.
 
 ---
 
@@ -2678,3 +2678,106 @@ downstream DB/service
 and, when something in that chain fails, you know which Linux tool can give you evidence.
 
 That is the level of networking knowledge that pays off directly in backend engineering.
+
+---
+
+# 📓 My Learning Log
+
+> Running notes from hands-on sessions. Resume from **"Next step"** at the bottom of the latest session.
+
+## Session 1 — 2026-10-06 — First Wireshark captures (Windows, no Docker yet)
+
+**Setup:** Wireshark + Npcap on Windows. Captured on **Wi-Fi** (internet traffic) and **Adapter for loopback traffic capture** (`localhost` traffic).
+
+### Mental model
+- **Packet** = envelope. **IP address** = building address. **Port** = apartment number (which program).
+- **DNS** = phonebook (name → IP). **TCP** = phone call (handshake, reliable, ordered). **UDP** = postcard (no handshake, no guarantee).
+- Frame on Wi-Fi = Ethernet (14) + IP (20) + TCP (20) = **54 bytes of headers**; data length = `TCP Segment Len` in the middle pane (more reliable than subtracting).
+- **Filtering is the core Wireshark skill** — networks are always noisy (e.g. adb, Firefox chatter on loopback).
+
+### Experiment 1 — DNS (`nslookup google.com`, filter `dns`)
+- Me = `192.168.0.168`, DNS server = router `192.168.0.1`; round trip ≈ 2.6 ms.
+- **A** = IPv4 address, **AAAA** = IPv6 address — clients ask for both.
+- **PTR** = reverse lookup (IP → name); nslookup looks up the DNS server's own name → "No such name" (harmless).
+- DNS uses **UDP port 53**; query/response matched by **transaction ID** (`0x0002` ↔ `0x0002`).
+- `nslookup` asked A then AAAA sequentially; `curl.exe` asked both **in parallel**.
+
+### Experiment 2 — TCP connection (`curl.exe http://example.com`, filter `tcp.port == 80`)
+- **Handshake:** `SYN` → `SYN, ACK` → `ACK`. Client sends data right after its ACK (ACKs are never ACKed).
+- **TCP ACK ≠ application response:** server's OS ACKs the request in ~12 ms; the web app replies ~40 ms later. Different layers.
+- **301 Moved Permanently** → `Location: http://www.google.com/` → new DNS lookup (8 IPs = DNS load balancing) + new TCP connection.
+- ⚠️ In Windows PowerShell 5.1, `curl` = `Invoke-WebRequest` (follows redirects, keeps alive). Real curl = **`curl.exe`**.
+- `Connection: Keep-Alive` keeps the connection open for reuse → no FIN until idle timeout.
+- **Close:** `FIN,ACK` → `FIN,ACK` → `ACK` (3 packets when the other side merges its ACK+FIN; textbook is 4). Two one-way lanes, each closed separately.
+- Side that sends **FIN first** goes into **TIME_WAIT** (`Get-NetTCPConnection -State TimeWait`). Too many new connections → TIME_WAIT pile-up → port exhaustion → why keep-alive / connection pooling exist (Stage 18).
+
+### Seq / Ack — my understanding ✅
+- **Seq** = byte number this packet's data **starts** at (own direction's counter).
+- **Ack** = "I've received everything before this number; send me this byte next."
+- Two independent counters, one per direction.
+- **Next Seq = Seq + Len (+1 for SYN or FIN)**; **Ack = other side's next Seq**.
+- **Cumulative ACK:** one ACK can confirm many packets.
+- **Ack never jumps over a gap.** Loss of a middle packet → receiver keeps sending the same Ack (**Dup ACK**) → sender **retransmits** → Ack jumps forward over everything buffered.
+- `SACK_PERM` in SYN = Selective ACK allowed (can report "I have 2001–3000 but miss 1001–2000").
+- Wireshark shows **relative** Seq (starts at 0); real/raw Seq starts at a random number.
+- Worked example (example.com): GET Len=75 → Ack=76; response 931+5 bytes → Ack=937; FINs: 76→77, 937→938.
+
+### Experiment 3 — Connection timeout (`curl.exe http://google.com:81 --connect-timeout 10`)
+- Only my `SYN` packets, **no reply** → `[TCP Retransmission]` of same SYN (same port, Seq=0).
+- Gaps **1 s → 2 s → 4 s** = **exponential backoff**; curl gave up at 10 s.
+- Silence = packet **dropped** (firewall, wrong IP, host down). **AWS Security Groups drop silently → timeouts.**
+- Always set connect timeouts in code (OS defaults: ~20 s Windows, ~2 min Linux) — Stage 19.
+
+### Experiment 4 — Connection refused (`curl.exe http://localhost:9999`, loopback adapter, filter `tcp.port == 9999`)
+- Every `SYN` answered by **`RST, ACK`** within ~16 µs (`Ack=1` = SYN counted as 1 byte).
+- **Happy Eyeballs:** curl tried `::1` (IPv6) first, then `127.0.0.1` (IPv4) 200 ms later, in parallel.
+- **Windows quirk:** retries SYN after RST (5×, 0.5 s apart) → "refused" takes ~2 s. Linux fails instantly.
+- Loopback `MSS=65475` vs Wi-Fi `MSS=1460` (no physical link limit) — MTU/MSS later.
+
+| | **Timeout** | **Refused** |
+|---|---|---|
+| Reply to SYN | nothing | RST immediately |
+| Meaning | dropped: firewall / SG / routing / host down | host reached, nothing listening |
+| Check first | firewall, Security Group, IP, route | is the app running? right port? |
+
+### Useful commands learned
+```powershell
+nslookup example.com
+curl.exe http://example.com
+curl.exe http://google.com:81 --connect-timeout 10
+Get-NetTCPConnection -State TimeWait
+Get-NetTCPConnection -State Established | Where-Object LocalAddress -eq '127.0.0.1'   # Linux: ss -tnp
+```
+
+### Wireshark features used
+Display filters (`dns`, `tcp.port == 80`) · Follow → TCP Stream · Statistics → Conversations · TCP section in middle pane (`Sequence Number`, `[Next Sequence Number]`, `TCP Segment Len`, `Sequence Number (raw)`).
+
+### Syllabus coverage
+Roughly **Stages 1, 4, 5, 6** (basics) + early Stage 23 (Wireshark).
+
+### ▶️ Next step
+1. Be the server: `python -m http.server 9999`, then `curl.exe http://localhost:9999` with filter `tcp.port == 9999`. Verify Seq/Ack math and see who sends FIN first.
+2. Then set up **WSL2 Ubuntu + Docker Engine** and capture with `nicolaka/netshoot` + tcpdump → `.pcap` → Wireshark.
+3. Break things on purpose: `tc netem` packet loss (see real Dup ACKs / retransmissions), firewall drops, nginx load balancer.
+
+## 📚 Reading list (skim alongside experiments)
+
+> Rule: **experiment → capture → read the matching section → explain it back.** Don't read ahead of the labs.
+
+**Primary (one book only):** *Computer Networking: A Top-Down Approach* — Kurose & Ross (+ free Kurose video lectures)
+- [ ] Ch 1 — Introduction (packets, delay, layers)
+- [ ] Ch 2 — Application Layer: HTTP + DNS sections (↔ Experiments 1–2)
+- [ ] Ch 3 — Transport Layer: UDP + TCP sections (↔ Seq/Ack, retransmission, handshake/close)
+
+**Companions:**
+- [ ] *Practical Packet Analysis* — Chris Sanders — Wireshark basics + TCP/UDP chapters
+- [ ] *High Performance Browser Networking* — Ilya Grigorik (free: https://hpbn.co) — Ch 2 (TCP) now; TLS/HTTP2 later
+
+**Light / 10-minute:**
+- Julia Evans zines — *Networking! ACK!*, *How DNS Works* (https://wizardzines.com)
+- YouTube — Chris Greer (Wireshark/TCP analysis), Hussein Nasser (backend: TCP, proxies, load balancers)
+
+**Later (don't open yet):**
+- *TCP/IP Illustrated, Vol. 1* — Stevens/Fall (deep reference)
+- *Networking and Kubernetes* — Strong & Lancey (O'Reilly) — at Stage 25
+- AWS VPC documentation — cloud stage
