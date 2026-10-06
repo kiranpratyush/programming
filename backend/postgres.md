@@ -260,10 +260,7 @@ For every API exercise:
 
 ### Phase 1 — Filtering and query semantics
 
-The Art of Postgres (Queries) 
-
-
-
+The Art of Postgres (Queries)
 
 #### Exercise 3 — Build an order search endpoint (Core)
 
@@ -642,6 +639,32 @@ Combining multiple indexes through Bitmap scans
 This provides the ability to scan through multiple indexes and create a bit map in memory and do a ordered scan of pages to align with sequential access.
 Expression on indexing is just indexing on top of experessions.
 Partial indexing: indexing on subset of rows.if you know that the read always happens on a particular subset of rows based on column value, it is helpful to create indexing on that row.
+
+By default adding an index blocks all the insert,update and delete operations. To do it concurrently you can use concurrent keyword.
+But remember it can take longer and might fail.
+A concurrent index can not run inside a transaction. when it fails you have to find the failed index and then rerun the index.
+A unique index does not allow duplicate values on the columns which is added. NULL != NULL due to three valued logic. you can configure the index to treat the NULL as equality.
+
+- when adding a primary key constraint, first you have to check if there is any null values coming
+- stop the incoming null values
+- scan for existing null values
+- fix the nulls
+- now add the new constraint
+- now try adding unique index concurrently
+- add constraint using the concurrent index
+
+## Data modeling
+
+Core topics:
+Normalization concepts (Understand the reasoning behind them and should be able to figure out what is the issue in the design)
+1NF 2NF 3NF : If you can reason about the dependency of each column have on their equivalent keys
+then you have to design the tables in a way that it removes any partital and transitive dependencies
+foreign keys:
+UUID : random UUIDs create partitioning use sorted UUID which is helpful in B-trees
+Primary Key : Unique and not null
+you can add unique constraint to a row as well
+Surrogate keys : Artificial keys to create deduplication instead of using composite keys.
+Once I have learnt a bit of database modeling etc it will be cool to perform this kind of migration
 
 ### What did I learn through out the week
 
