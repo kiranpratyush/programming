@@ -715,3 +715,6 @@ Rules: attempt first without running, state the plan in one sentence ("group by 
 ### Reflection after each window problem
 
 Could this be solved without a window function? How painful would it be? What is the grain at each stage?
+
+Database modeling
+- what are the top 20% I need to cover in data modeling section 
