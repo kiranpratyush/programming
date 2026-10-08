@@ -111,7 +111,134 @@ Add R4 as a second path between R1 and R3.
 ---
 
 ## My design
-_(fill in at M0)_
+### M0 design
+Given :LAN a should support 50 hosts , Lan B should support 10 hosts
+          count  gateway networkaddress+broadcast total Round hostbit networkbits
+Host A    50     1       2                        53    64    6       26
+Host B    10     1       2                        13    16    4       28
+linkR1-R2 2      -       2                        4     4     2       30
+linkR2-R3 2      -       2                        4     4     2       30
+linkR1-R4 2      -       2                        4     4     2       30
+linkR2-R4 2      -       2                        4     4     2       30
+linkR3-R4 2      -       2                        4     4     2       30
+linkR4-edg2      -       2                        4     4     2       30
+linked-ws 2      -       2                        4     4     2       30
+Lan A : 10.10.0.0/26 - 10.10.0.63/26 usable address 10.10.0.1/26 - 10.10.0.62/26 gateway name : 10.10.0.1/26
+Lan B : 10.10.0.64/28 - 10.10.0.79/28 usable address 10.10.0.65/28 - 10.10.0.78/28
+gateway name : 10.10.0.65/28
+linkR1-R2 : 10.10.0.80 - 10.10.0.83/30 usable address 10.10.0.81/30 - 10.10.0.82/30
+linkR2-R3 : 10.10.0.84 - 10.10.0.87/30 usable address 10.10.0.85/30 - 10.10.0.86/30
+linkR1-R4 : 10.10.0.88 - 10.10.0.91/30 usable address 10.10.0.89/30 - 10.10.0.90/30
+linkR2-R4 : 10.10.0.92 - 10.10.0.95/30 usable address 10.10.0.93/30 - 10.10.0.94/30
+linkR3-R4 : 10.10.0.96 - 10.10.0.99/30 usable address 10.10.0.97/30 - 10.10.0.98/30
+linkR4-edge:10.10.0.100 - 10.10.0.103/30 usable address 10.10.0.101/30 - 10.10.0.102/30
+linkedge-ubuntu: 10.10.0.104-10.10.0.107 usable address 10.10.0.105/30 - 10.10.0.106/30
+
+interfaces with their IP assignment
+ns-lanahost1:10.10.0.2/26
+ns-lanahost2:10.10.0.3/26
+ns-lanbhost1:10.10.0.66/28
+ns-lanbhost2:10.10.0.67/28
+ns-router1
+	-eth0:10.10.0.1/26
+	-eth1:10.10.0.89/30
+	-eth2:10.10.0.81/30
+ns-router2
+	-eth0:10.10.0.82/30 
+	-eth1:10.10.0.85/30 
+	-eth2:10.10.0.93/30 
+ns-router3
+	-eth0:10.10.0.86/30
+	-eth1:10.10.0.65/28
+  -eth2:10.10.0.97/30
+ns-router4
+	-eth0:10.10.0.90/30
+	-eth1:10.10.0.94/30
+	-eth2:10.10.0.98/30
+	-eth3:10.10.0.101/30
+ns-edge:
+	-eth0:10.10.0.102/30
+  -eth1:10.10.0.105/30
+ubuntu:
+	-private-interface:10.10.0.106/30
+
+Route tables:
+ns-lanahost1:
+   default via 10.10.0.1/26
+ns-lanahost2:
+   default via 10.10.0.1/26
+ns-lanbhost1:
+  default via 10.10.0.65/28
+ns-lanbhost2:
+  default via 10.10.0.65/28
+ns-router1:
+  10.10.0.64/28 via 10.10.0.82/30
+  10.10.0.84/30 via 10.10.0.82/30
+  10.10.0.92/30 via 10.10.0.82/30
+  10.10.0.96/30 via 10.10.0.90/30
+  10.10.0.100/30 via 10.10.0.90/30
+  10.10.0.104/30 via 10.10.0.90/30
+ns-router2:
+  10.10.0.0/26 via 10.10.0.81/30
+  10.10.0.64/28 via 10.10.0.86/30
+  10.10.0.88/30 via 10.10.0.94/30
+  10.10.0.96/30 via 10.10.0.86/30
+  10.10.0.100/30 via 10.10.0.94/30
+  10.10.0.104/30 via 10.10.0.94/30
+ns-router3:
+  10.10.0.0/26 via 10.10.0.85/30 
+  10.10.0.80/30 via 10.10.0.85/30
+  10.10.0.88/30 via 10.10.0.98/30
+  10.10.0.92/30 via 10.10.0.98/30
+  10.10.0.100/30 via 10.10.0.98/30
+  10.10.0.104/30 via 10.10.0.98/30
+ns-router4:
+   10.10.0.0/26 via 10.10.0.89/30
+   10.10.0.64/28 via 10.10.0.97/30
+   10.10.0.80/30 via 10.10.0.89/30
+   10.10.0.84/30 via 10.10.0.93/30
+   10.10.0.104/30 via 10.10.0.102/30
+
+edge:
+10.10.0.0/26 via 10.10.0.101/30
+10.10.0.64/28 via 10.10.0.101/30
+10.10.0.80/30 via 10.10.0.101/30
+10.10.0.84/30 via 10.10.0.101/30
+10.10.0.88/30 via 10.10.0.101/30
+10.10.0.92/30 via 10.10.0.101/30
+10.10.0.96/30 via 10.10.0.101/30
+
+ubuntu(root namespace):
+10.10.0.0/26 via 10.10.0.105/30
+10.10.0.64/28 via 10.10.0.105/30
+10.10.0.80/30 via 10.10.0.105/30
+10.10.0.84/30 via 10.10.0.105/30
+10.10.0.88/30 via 10.10.0.105/30
+10.10.0.92/30 via 10.10.0.105/30
+10.10.0.96/30 via 10.10.0.105/30
+10.10.0.100/30 via 10.10.0.105/30
+
+bridges:
+- bridge-lana:
+  inside namespace ns-router1
+- bridge-lanb:
+  inside namespace ns-router3
+
+veth:
+- lanahost1->bridge : ns-ha1-eth0 peer name lanahost1bg   (bridge-lana port, in ns-router1)
+- lanahost2->bridge : ns-ha2-eth0 peer name lanahost2bg   (bridge-lana port, in ns-router1)
+- bridge->ns-router1: ns-r1bg peer name ns-r1-eth0        (ns-r1bg = bridge-lana port, ns-r1-eth0 = 10.10.0.1/26)
+- R1->R2 : ns-r1-eth2 peer name ns-r2-eth0                (10.10.0.81 <-> 10.10.0.82)
+- R2->R3 : ns-r2-eth1 peer name ns-r3-eth0                (10.10.0.85 <-> 10.10.0.86)
+- R1->R4 : ns-r1-eth1 peer name ns-r4-eth0                (10.10.0.89 <-> 10.10.0.90)
+- R2->R4 : ns-r2-eth2 peer name ns-r4-eth1                (10.10.0.93 <-> 10.10.0.94)
+- R3->R4 : ns-r3-eth2 peer name ns-r4-eth2                (10.10.0.97 <-> 10.10.0.98)
+- R4->edge : ns-r4-eth3 peer name ns-edge-eth0            (10.10.0.101 <-> 10.10.0.102)
+- edge->Ubuntu : ns-edge-eth1 peer name ubuntu-priv       (10.10.0.105 <-> 10.10.0.106, ubuntu-priv stays in root)
+- lanbhost1->bridge : ns-hb1-eth0 peer name lanbhost1bg   (bridge-lanb port, in ns-router3)
+- lanbhost2->bridge : ns-hb2-eth0 peer name lanbhost2bg   (bridge-lanb port, in ns-router3)
+- bridge->R3 : ns-r3bg peer name ns-r3-eth1               (ns-r3bg = bridge-lanb port, ns-r3-eth1 = 10.10.0.65/28)
 
 ## Log
-_(one entry per milestone: prediction → what happened → explanation in my own words)_
+### My learning on 8th October while designing a network myself.
+
