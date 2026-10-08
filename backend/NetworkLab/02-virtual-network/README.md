@@ -239,6 +239,74 @@ veth:
 - lanbhost2->bridge : ns-hb2-eth0 peer name lanbhost2bg   (bridge-lanb port, in ns-router3)
 - bridge->R3 : ns-r3bg peer name ns-r3-eth1               (ns-r3bg = bridge-lanb port, ns-r3-eth1 = 10.10.0.65/28)
 
+### M1 commands (reviewed)
+Topology: `ns-ha1 ── ns-r1 ── ns-hb1`. Hosts: 10.10.0.2/26 and 10.10.0.66/28. R1: 10.10.0.1/26 (eth0) and 10.10.0.65/28 (eth1).
+
+```bash
+# 0. clean start
+sudo ip netns del ns-ha1 2>/dev/null
+sudo ip netns del ns-hb1 2>/dev/null
+sudo ip netns del ns-r1  2>/dev/null
+
+# 1. namespaces
+sudo ip netns add ns-ha1
+sudo ip netns add ns-r1
+sudo ip netns add ns-hb1
+
+# 2. veth pairs, moved into namespaces
+sudo ip link add ns-ha1-eth0 type veth peer name ns-r1-eth0
+sudo ip link add ns-hb1-eth0 type veth peer name ns-r1-eth1
+sudo ip link set ns-ha1-eth0 netns ns-ha1
+sudo ip link set ns-hb1-eth0 netns ns-hb1
+sudo ip link set ns-r1-eth0  netns ns-r1
+sudo ip link set ns-r1-eth1  netns ns-r1
+
+# 3. addresses
+sudo ip -n ns-ha1 addr add 10.10.0.2/26  dev ns-ha1-eth0
+sudo ip -n ns-hb1 addr add 10.10.0.66/28 dev ns-hb1-eth0
+sudo ip -n ns-r1  addr add 10.10.0.1/26  dev ns-r1-eth0
+sudo ip -n ns-r1  addr add 10.10.0.65/28 dev ns-r1-eth1
+
+# 4. links up
+sudo ip -n ns-ha1 link set lo up
+sudo ip -n ns-hb1 link set lo up
+sudo ip -n ns-r1  link set lo up
+sudo ip -n ns-ha1 link set ns-ha1-eth0 up
+sudo ip -n ns-hb1 link set ns-hb1-eth0 up
+sudo ip -n ns-r1  link set ns-r1-eth0 up
+sudo ip -n ns-r1  link set ns-r1-eth1 up
+
+# 5. default routes on hosts (gateway is a bare IP, no prefix)
+sudo ip -n ns-ha1 route add default via 10.10.0.1
+sudo ip -n ns-hb1 route add default via 10.10.0.65
+
+# 6. check state
+sudo ip netns list
+sudo ip -n ns-r1 -br addr
+sudo ip -n ns-ha1 route
+sudo ip -n ns-hb1 route
+sudo ip -n ns-r1 route
+sudo ip netns exec ns-r1 sysctl net.ipv4.ip_forward    # expect 0
+
+# 7. Test 1: forwarding off -> expect timeout (silent drop)
+sudo ip netns exec ns-r1 tcpdump -n -e -v -i ns-r1-eth0     # terminal 1
+sudo ip netns exec ns-r1 tcpdump -n -e -v -i ns-r1-eth1     # terminal 2
+sudo ip netns exec ns-ha1 ping -c 3 -W 2 10.10.0.66         # terminal 3
+
+# 8. Test 2: forwarding on -> expect replies; compare MACs and TTL (64 -> 63)
+sudo ip netns exec ns-r1 sysctl -w net.ipv4.ip_forward=1
+sudo ip netns exec ns-ha1 ping -c 3 -W 2 10.10.0.66
+
+# 9. Test 3: break it again
+sudo ip netns exec ns-r1 sysctl -w net.ipv4.ip_forward=0
+sudo ip netns exec ns-ha1 ping -c 3 -W 2 10.10.0.66
+
+# 10. teardown
+sudo ip netns del ns-ha1
+sudo ip netns del ns-hb1
+sudo ip netns del ns-r1
+```
+
 ## Log
 ### My learning on 8th October while designing a network myself.
 
