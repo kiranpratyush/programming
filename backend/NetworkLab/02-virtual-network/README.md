@@ -310,3 +310,22 @@ sudo ip netns del ns-r1
 ## Log
 ### My learning on 8th October while designing a network myself.
 
+### M1 log: one router between two hosts (8th October)
+Scripts: `build.sh` and `teardown.sh` in this folder.
+
+**Prediction (before the test).** With `ip_forward=0`, the ping times out. With `ip_forward=1`, the ping works. The MAC addresses change at R1. The IP addresses stay the same. The TTL is lower by 1 after R1.
+**Correction to my first idea.** I first said the ping returns "unreachable". This was wrong. The host has a route to its gateway, so it sends the packet. R1 drops it silently. The result is a timeout.
+
+**Results.**
+- Forwarding off: requests arrive on `ns-r1-eth0`. Nothing leaves on `ns-r1-eth1`. The ping shows 100% packet loss. R1 sends no error message.
+- Forwarding on: replies return. Side A request: `76:0c:7f:7f:52:26 > 2e:04:fd:08:45:7b`, ttl 64. Side B request: `2e:af:f6:4a:3f:bb > 6e:4b:74:5d:d6:58`, ttl 63. The IPs are `10.10.0.2 > 10.10.0.66` on both sides. The IP id is the same on both sides, so it is the same packet.
+
+**What I learned.**
+1. A router changes the frame (source MAC and destination MAC). It does not change the IP addresses.
+2. The sender sets the TTL (64). Each router that forwards the packet subtracts 1. When the TTL reaches 0, the router drops the packet and sends ICMP "Time exceeded". Traceroute uses this.
+3. `hA1` asks ARP for its gateway (`10.10.0.1`), not for `hB1`. `10.10.0.66` is not in `10.10.0.0/26`, so the host uses its default route. Without a default route, the ping fails at once with "Network is unreachable".
+4. The `/26` on an interface address defines the on-link subnet. The kernel makes the connected route from it. The gateway in `default via` is a bare IP address with no prefix. It must be inside the on-link subnet.
+5. `ip_forward=1` is a permission. With it, the kernel does a route lookup, decreases the TTL, resolves the next-hop MAC with ARP, builds a new frame and sends it. With `ip_forward=0`, the kernel drops packets that are not for itself.
+6. A timeout does not show where the packet was lost. I found the place with tcpdump on both sides of R1.
+7. A switch learns MAC addresses and sends a frame to one port. It does not change the TTL. A router forwards by IP address and decreases the TTL.
+
