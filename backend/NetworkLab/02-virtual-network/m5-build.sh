@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# M5 (first pass, no NAT yet) + M6 groundwork: adds R4, edge and the Ubuntu root namespace to the M3 network.
+# M5 + M6 groundwork: adds R4, edge and the Ubuntu root namespace to the M3 network.
+# Second pass: default routes to the internet, and MASQUERADE in the Ubuntu root namespace.
 #
 #   LAN-A -- R1 -- R2 -- R3 -- LAN-B
 #             \    |    /
@@ -7,7 +8,7 @@
 #                  |
 #                 edge
 #                  |
-#            ubuntu (root ns)
+#            ubuntu (root ns) -- eth0 -- Windows -- home router -- internet
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -90,10 +91,34 @@ for s in $A $B $L12 $L23 $L14 $L24 $L34 $L4E; do
   sudo ip route add "$s" via 10.10.0.105
 done
 
+# ---- default routes: everything unknown goes toward the internet ----
+# R2 gets none: no host traffic to the internet goes through R2.
+sudo ip -n ns-r1   route add default via 10.10.0.90    # R4 eth0
+sudo ip -n ns-r3   route add default via 10.10.0.98    # R4 eth2
+sudo ip -n ns-r4   route add default via 10.10.0.102   # edge eth0
+sudo ip -n ns-edge route add default via 10.10.0.106   # ubuntu-priv
+
+# ---- Ubuntu root namespace: router + NAT ----
+# The root namespace is NOT deleted by teardown, so every rule here carries the
+# comment "m5-lab". m5-teardown.sh finds and deletes the rules by that comment.
+UPLINK=$(ip route show default | awk '{print $5; exit}')   # usually eth0
+sudo sysctl -qw net.ipv4.ip_forward=1
+# Docker sets the FORWARD policy to DROP, so allow lab -> internet, and only replies back.
+sudo iptables -I FORWARD -i ubuntu-priv -o "$UPLINK" -m comment --comment m5-lab -j ACCEPT
+sudo iptables -I FORWARD -i "$UPLINK" -o ubuntu-priv -m conntrack --ctstate ESTABLISHED,RELATED \
+  -m comment --comment m5-lab -j ACCEPT
+# The source of a lab packet is the host (10.10.0.2, 10.10.0.66, ...), not 10.10.0.106.
+# MASQUERADE uses the current address of the uplink (172.x, it can change after a WSL restart).
+sudo iptables -t nat -A POSTROUTING -s 10.10.0.0/24 -o "$UPLINK" -m comment --comment m5-lab -j MASQUERADE
+
 # ---- checks ----
 for target in 10.10.0.66 10.10.0.102 10.10.0.106; do
   sudo ip netns exec ns-ha1 ping -c 1 -W 2 "$target" >/dev/null \
     && echo "ha1 -> $target OK" || echo "ha1 -> $target FAILED"
 done
 ping -c 1 -W 2 10.10.0.2 >/dev/null && echo "ubuntu -> ha1 OK" || echo "ubuntu -> ha1 FAILED"
+for h in ns-ha1 ns-ha2 ns-hb1 ns-hb2; do
+  sudo ip netns exec "$h" ping -c 1 -W 2 8.8.8.8 >/dev/null \
+    && echo "$h -> 8.8.8.8 OK" || echo "$h -> 8.8.8.8 FAILED"
+done
 sudo ip netns exec ns-ha1 traceroute -n 10.10.0.106
