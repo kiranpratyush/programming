@@ -73,7 +73,7 @@
                 token.Register(() =>
                 {
                     Console.WriteLine($"callback on thread {Environment.CurrentManagedThreadId}");
-                    Thread.Sleep(3000);
+                    
                     
                  });
                 Console.WriteLine($"[{taskName}] started");
