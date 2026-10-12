@@ -740,4 +740,15 @@ Rules: attempt first without running, state the plan in one sentence ("group by 
 Could this be solved without a window function? How painful would it be? What is the grain at each stage?
 
 Database modeling
-- what are the top 20% I need to cover in data modeling section 
+
+- what are the top 20% I need to cover in data modeling section
+- Data base normalization: 1NF : should not contain duplicate keyed column data,all the column should not be compound like array etc.
+- 2NF: Non key attribute should not have partial dependency on the keyed attributes
+- 3NF : Non key attribute should not have transitive dependency on other non key attributes
+- BCNF : if X->Y if Y attribute let's say empolyee name depends on employee id, the X should always be super or candidate key
+
+My idea: Always think is a set of attribute can exist outside of the table we are trying to normalize. Is there any set of attribute creating duplicate entries. Any set of attribute has compund data types seggregate it.
+
+
+
+Transaction and Isolation levels

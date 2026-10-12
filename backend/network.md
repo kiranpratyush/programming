@@ -2142,16 +2142,16 @@ Do not attempt to implement QUIC yourself.
 
 At this point you should be able to choose between mechanisms based on semantics rather than fashion.
 
-| Mechanism | Direction | Persistence | Typical use |
-|---|---|---|---|
-| HTTP request/response | client → server → client | short/reused connection | APIs |
-| Polling | repeated request/response | repeated | simple status |
-| Long polling | server delays response | repeated long requests | event notification |
-| SSE | server → client | long lived | progress/logs/events |
-| WebSocket | bidirectional | long lived | interactive real-time |
-| gRPC unary | request/response | pooled HTTP/2 | service-to-service |
-| gRPC streaming | one/bidirectional streams | long lived | backend streaming |
-| Kafka | producer/log/consumer | durable log | asynchronous durable events |
+| Mechanism             | Direction                 | Persistence             | Typical use                 |
+| --------------------- | ------------------------- | ----------------------- | --------------------------- |
+| HTTP request/response | client → server → client  | short/reused connection | APIs                        |
+| Polling               | repeated request/response | repeated                | simple status               |
+| Long polling          | server delays response    | repeated long requests  | event notification          |
+| SSE                   | server → client           | long lived              | progress/logs/events        |
+| WebSocket             | bidirectional             | long lived              | interactive real-time       |
+| gRPC unary            | request/response          | pooled HTTP/2           | service-to-service          |
+| gRPC streaming        | one/bidirectional streams | long lived              | backend streaming           |
+| Kafka                 | producer/log/consumer     | durable log             | asynchronous durable events |
 
 Questions to ask:
 
@@ -2690,12 +2690,14 @@ That is the level of networking knowledge that pays off directly in backend engi
 **Setup:** Wireshark + Npcap on Windows. Captured on **Wi-Fi** (internet traffic) and **Adapter for loopback traffic capture** (`localhost` traffic).
 
 ### Mental model
+
 - **Packet** = envelope. **IP address** = building address. **Port** = apartment number (which program).
 - **DNS** = phonebook (name → IP). **TCP** = phone call (handshake, reliable, ordered). **UDP** = postcard (no handshake, no guarantee).
 - Frame on Wi-Fi = Ethernet (14) + IP (20) + TCP (20) = **54 bytes of headers**; data length = `TCP Segment Len` in the middle pane (more reliable than subtracting).
 - **Filtering is the core Wireshark skill** — networks are always noisy (e.g. adb, Firefox chatter on loopback).
 
 ### Experiment 1 — DNS (`nslookup google.com`, filter `dns`)
+
 - Me = `192.168.0.168`, DNS server = router `192.168.0.1`; round trip ≈ 2.6 ms.
 - **A** = IPv4 address, **AAAA** = IPv6 address — clients ask for both.
 - **PTR** = reverse lookup (IP → name); nslookup looks up the DNS server's own name → "No such name" (harmless).
@@ -2703,6 +2705,7 @@ That is the level of networking knowledge that pays off directly in backend engi
 - `nslookup` asked A then AAAA sequentially; `curl.exe` asked both **in parallel**.
 
 ### Experiment 2 — TCP connection (`curl.exe http://example.com`, filter `tcp.port == 80`)
+
 - **Handshake:** `SYN` → `SYN, ACK` → `ACK`. Client sends data right after its ACK (ACKs are never ACKed).
 - **TCP ACK ≠ application response:** server's OS ACKs the request in ~12 ms; the web app replies ~40 ms later. Different layers.
 - **301 Moved Permanently** → `Location: http://www.google.com/` → new DNS lookup (8 IPs = DNS load balancing) + new TCP connection.
@@ -2712,6 +2715,7 @@ That is the level of networking knowledge that pays off directly in backend engi
 - Side that sends **FIN first** goes into **TIME_WAIT** (`Get-NetTCPConnection -State TimeWait`). Too many new connections → TIME_WAIT pile-up → port exhaustion → why keep-alive / connection pooling exist (Stage 18).
 
 ### Seq / Ack — my understanding ✅
+
 - **Seq** = byte number this packet's data **starts** at (own direction's counter).
 - **Ack** = "I've received everything before this number; send me this byte next."
 - Two independent counters, one per direction.
@@ -2723,24 +2727,27 @@ That is the level of networking knowledge that pays off directly in backend engi
 - Worked example (example.com): GET Len=75 → Ack=76; response 931+5 bytes → Ack=937; FINs: 76→77, 937→938.
 
 ### Experiment 3 — Connection timeout (`curl.exe http://google.com:81 --connect-timeout 10`)
+
 - Only my `SYN` packets, **no reply** → `[TCP Retransmission]` of same SYN (same port, Seq=0).
 - Gaps **1 s → 2 s → 4 s** = **exponential backoff**; curl gave up at 10 s.
 - Silence = packet **dropped** (firewall, wrong IP, host down). **AWS Security Groups drop silently → timeouts.**
 - Always set connect timeouts in code (OS defaults: ~20 s Windows, ~2 min Linux) — Stage 19.
 
 ### Experiment 4 — Connection refused (`curl.exe http://localhost:9999`, loopback adapter, filter `tcp.port == 9999`)
+
 - Every `SYN` answered by **`RST, ACK`** within ~16 µs (`Ack=1` = SYN counted as 1 byte).
 - **Happy Eyeballs:** curl tried `::1` (IPv6) first, then `127.0.0.1` (IPv4) 200 ms later, in parallel.
 - **Windows quirk:** retries SYN after RST (5×, 0.5 s apart) → "refused" takes ~2 s. Linux fails instantly.
 - Loopback `MSS=65475` vs Wi-Fi `MSS=1460` (no physical link limit) — MTU/MSS later.
 
-| | **Timeout** | **Refused** |
-|---|---|---|
-| Reply to SYN | nothing | RST immediately |
-| Meaning | dropped: firewall / SG / routing / host down | host reached, nothing listening |
-| Check first | firewall, Security Group, IP, route | is the app running? right port? |
+|              | **Timeout**                                  | **Refused**                     |
+| ------------ | -------------------------------------------- | ------------------------------- |
+| Reply to SYN | nothing                                      | RST immediately                 |
+| Meaning      | dropped: firewall / SG / routing / host down | host reached, nothing listening |
+| Check first  | firewall, Security Group, IP, route          | is the app running? right port? |
 
 ### Useful commands learned
+
 ```powershell
 nslookup example.com
 curl.exe http://example.com
@@ -2750,12 +2757,15 @@ Get-NetTCPConnection -State Established | Where-Object LocalAddress -eq '127.0.0
 ```
 
 ### Wireshark features used
+
 Display filters (`dns`, `tcp.port == 80`) · Follow → TCP Stream · Statistics → Conversations · TCP section in middle pane (`Sequence Number`, `[Next Sequence Number]`, `TCP Segment Len`, `Sequence Number (raw)`).
 
 ### Syllabus coverage
+
 Roughly **Stages 1, 4, 5, 6** (basics) + early Stage 23 (Wireshark).
 
 ### ▶️ Next step (superseded — see "🔁 Approach review" below)
+
 1. Be the server: `python -m http.server 9999`, then `curl.exe http://localhost:9999` with filter `tcp.port == 9999`. Verify Seq/Ack math and see who sends FIN first.
 2. Then set up **WSL2 Ubuntu + Docker Engine** and capture with `nicolaka/netshoot` + tcpdump → `.pcap` → Wireshark.
 3. Break things on purpose: `tc netem` packet loss (see real Dup ACKs / retransmissions), firewall drops, nginx load balancer.
@@ -2763,30 +2773,35 @@ Roughly **Stages 1, 4, 5, 6** (basics) + early Stage 23 (Wireshark).
 ## 🔁 Approach review — 2026-10-06
 
 ### What's going well
+
 - Session 1 was the right kind of learning: real packets, real failures (timeout vs refused), and the Seq/Ack math got worked through properly.
 
 ### What to change
+
 1. **Biggest gap: Layer 3 (IP, subnets, routing, ARP, NAT) hasn't been touched.** Everything so far is TCP/DNS from one laptop to the internet. Docker, Kubernetes and AWS VPC networking are mostly Layer 3 plus Linux plumbing (namespaces, veth, bridges, iptables). Without it, K8s/VPC turns into memorizing terms.
 2. **Move to Linux now.** WSL2 Ubuntu and Docker Desktop are already installed. Windows quirks (SYN retries after RST, the `curl` alias) are noise. Servers, containers, K8s nodes and EC2 are Linux.
-3. **Predict before you run.** Write down what you expect *before* every command or capture. A wrong prediction is where the learning is. Watching output without predicting feels like learning but doesn't stick.
+3. **Predict before you run.** Write down what you expect _before_ every command or capture. A wrong prediction is where the learning is. Watching output without predicting feels like learning but doesn't stick.
 4. **Start every session from memory.** Spend 10 minutes answering questions on the previous session with notes closed, then check.
 5. **End every session by breaking something and diagnosing it.** That's the skill the job actually needs.
-6. **Write this log yourself, in your own words.** Ask Claude to *check* your explanation, not to write it. If you can't write it, you don't know it yet.
+6. **Write this log yourself, in your own words.** Ask Claude to _check_ your explanation, not to write it. If you can't write it, you don't know it yet.
 
 ### Re-sequenced roadmap (goal: K8s platforms + AWS infra)
-| Phase | What | Syllabus stages | Status |
-|---|---|---|---|
-| A | TCP / DNS from the client seat | 1, 4, 5, 6 (basics), 23 | ✅ mostly done |
-| **B** | **Layer 3 in Linux: IP, subnets, routes, ARP, NAT → build "containers" by hand (netns, veth, bridge, iptables) → compare with real Docker** | 2, 12, 13, 14, 24 | ▶️ **now** |
-| C | Backend traffic in docker compose: HTTP, TLS, nginx proxy/LB, timeouts/retries/pooling under `tc netem` loss | 7, 8, 15–20, 22 | |
-| D | Kubernetes with `kind`: pod IPs, Service = iptables DNAT, CoreDNS, ndots | 25 | |
-| E | AWS VPC: map every piece back to Phase B (route table, IGW, NAT GW, SG = stateful filter) | — | |
-| later | HTTP/2, SSE/WebSocket, gRPC, QUIC: learn these when a project needs them | 9, 10, 11, 26 | deferred |
+
+| Phase | What                                                                                                                                        | Syllabus stages         | Status         |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- | -------------- |
+| A     | TCP / DNS from the client seat                                                                                                              | 1, 4, 5, 6 (basics), 23 | ✅ mostly done |
+| **B** | **Layer 3 in Linux: IP, subnets, routes, ARP, NAT → build "containers" by hand (netns, veth, bridge, iptables) → compare with real Docker** | 2, 12, 13, 14, 24       | ▶️ **now**     |
+| C     | Backend traffic in docker compose: HTTP, TLS, nginx proxy/LB, timeouts/retries/pooling under `tc netem` loss                                | 7, 8, 15–20, 22         |                |
+| D     | Kubernetes with `kind`: pod IPs, Service = iptables DNAT, CoreDNS, ndots                                                                    | 25                      |                |
+| E     | AWS VPC: map every piece back to Phase B (route table, IGW, NAT GW, SG = stateful filter)                                                   | —                       |                |
+| later | HTTP/2, SSE/WebSocket, gRPC, QUIC: learn these when a project needs them                                                                    | 9, 10, 11, 26           | deferred       |
 
 ### ▶️ Session 2 — "Follow one ping through two NATs" (WSL Ubuntu)
+
 Your setup: WSL `eth0` = `172.26.169.218/20`, gateway `172.26.160.1` (Windows) → Wi-Fi `192.168.0.168` → router `192.168.0.1` → ISP. That's **two NATs**, and you'll get to see both.
 
 **Before starting, read this (15 min, just enough theory):**
+
 - **IP address** = a street address for a device, e.g. `192.168.0.168`.
 - **Prefix (`/24`, `/20`)** = how much of the address is the "street name" and how much is the "house number". Two devices on the same street can talk to each other directly.
 - **Gateway / router** = the door out of your street. Anything for another street goes to the gateway.
@@ -2797,8 +2812,8 @@ Your setup: WSL `eth0` = `172.26.169.218/20`, gateway `172.26.160.1` (Windows) �
 - Stuck on a word? Ask Claude mid-session. Guessing a prediction wrong is fine; skipping the prediction isn't.
 
 0. **Setup:** `sudo apt install -y tcpdump dnsutils`
-1. **Warm-up (no notes):** (a) Which packets do you see on a timeout, and which on a refused connection? (b) The client sends Seq=1, Len=75. What Ack comes back? (c) Which side ends up in TIME_WAIT? (d) What does a Dup ACK tell you? *(Optional close-out of Phase A: run `NetworkLab/01-tiny-server/server.ps1`. **Predict** who sends FIN first and which side gets TIME_WAIT.)*
-2. **Predict, then run:** `ip -br addr`, `ip route`, `ip route get 8.8.8.8`, `ip route get 172.26.170.5`, `ip route get 127.0.0.1`. For each one, write down the interface and whether there's a `via` *before* you run it. *(Subnet math such as the range of `172.26.160.0/20` is optional for now; it gets its own session later.)*
+1. **Warm-up (no notes):** (a) Which packets do you see on a timeout, and which on a refused connection? (b) The client sends Seq=1, Len=75. What Ack comes back? (c) Which side ends up in TIME_WAIT? (d) What does a Dup ACK tell you? _(Optional close-out of Phase A: run `NetworkLab/01-tiny-server/server.ps1`. **Predict** who sends FIN first and which side gets TIME_WAIT.)_
+2. **Predict, then run:** `ip -br addr`, `ip route`, `ip route get 8.8.8.8`, `ip route get 172.26.170.5`, `ip route get 127.0.0.1`. For each one, write down the interface and whether there's a `via` _before_ you run it. _(Subnet math such as the range of `172.26.160.0/20` is optional for now; it gets its own session later.)_
 3. **ARP:** `sudo ip neigh flush dev eth0`. In terminal 1 run `sudo tcpdump -n -e -i eth0 arp or icmp`, and in terminal 2 run `ping -c 3 8.8.8.8`. **Predict:** which IP does the ARP request ask about?
 4. **See NAT:** run the same ping while Wireshark captures on Windows **Wi-Fi** (filter `icmp`), and on **vEthernet (WSL)** if it's listed. Compare the source IPs at each point. What source IP does 8.8.8.8 see? (`curl.exe ifconfig.me`). Draw the chain.
 5. **Break it:** `sudo ip route del default`, then `ping 8.8.8.8` and `ping 172.26.160.1`. Do they fail the same way? Is any packet sent at all? Add a **third row** to your failure table next to timeout and refused. Restore with `sudo ip route add default via 172.26.160.1` (or `wsl --shutdown`).
@@ -2810,7 +2825,8 @@ Your setup: WSL `eth0` = `172.26.169.218/20`, gateway `172.26.160.1` (Windows) �
 
 > Rule: **experiment → capture → read the matching section → explain it back.** Don't read ahead of the labs.
 
-**Primary (one book only):** *Computer Networking: A Top-Down Approach* — Kurose & Ross (+ free Kurose video lectures)
+**Primary (one book only):** _Computer Networking: A Top-Down Approach_ — Kurose & Ross (+ free Kurose video lectures)
+
 - [ ] Ch 1 — Introduction (packets, delay, layers)
 - [ ] Ch 2 — Application Layer: HTTP + DNS sections (↔ Experiments 1–2)
 - [ ] Ch 3 — Transport Layer: UDP + TCP sections (↔ Seq/Ack, retransmission, handshake/close)
@@ -2818,6 +2834,7 @@ Your setup: WSL `eth0` = `172.26.169.218/20`, gateway `172.26.160.1` (Windows) �
 - [ ] Ch 6 — Link Layer: ARP section only (↔ Session 2 step 3)
 
 **Step-back reading after Session 3 (2026-10-07), in this order:**
+
 - [ ] Practical Networking (Ed Harmoush, YouTube / practicalnetworking.net): "Packet Traveling" series (↔ Sessions 2–3: ARP, MAC vs IP, routers)
 - [ ] Beej's Guide to Network Concepts (https://beej.us/guide/bgnet0/): IP, subnet masks, routing, ARP, NAT chapters
 - [ ] Kurose & Ross Ch 4: IPv4 addressing (CIDR / prefixes) + NAT · Ch 6: link-layer addressing and ARP
@@ -2826,31 +2843,34 @@ Your setup: WSL `eth0` = `172.26.169.218/20`, gateway `172.26.160.1` (Windows) �
 - [ ] iximiuz: "Container Networking Is Simple!" (https://iximiuz.com/en/posts/container-networking-is-simple/): read up to and including the veth part; the bridge/NAT part after Session 4
 
 **Companions:**
-- [ ] *Practical Packet Analysis* — Chris Sanders — Wireshark basics + TCP/UDP chapters
-- [ ] *High Performance Browser Networking* — Ilya Grigorik (free: https://hpbn.co) — Ch 2 (TCP) now; TLS/HTTP2 later
+
+- [ ] _Practical Packet Analysis_ — Chris Sanders — Wireshark basics + TCP/UDP chapters
+- [ ] _High Performance Browser Networking_ — Ilya Grigorik (free: https://hpbn.co) — Ch 2 (TCP) now; TLS/HTTP2 later
 
 **Light / 10-minute:**
-- Julia Evans zines — *Networking! ACK!*, *How DNS Works* (https://wizardzines.com)
+
+- Julia Evans zines — _Networking! ACK!_, _How DNS Works_ (https://wizardzines.com)
 - YouTube — Chris Greer (Wireshark/TCP analysis), Hussein Nasser (backend: TCP, proxies, load balancers)
 
 **Later (don't open yet):**
-- *TCP/IP Illustrated, Vol. 1* — Stevens/Fall (deep reference)
-- *Networking and Kubernetes* — Strong & Lancey (O'Reilly) — at Stage 25
+
+- _TCP/IP Illustrated, Vol. 1_ — Stevens/Fall (deep reference)
+- _Networking and Kubernetes_ — Strong & Lancey (O'Reilly) — at Stage 25
 - AWS VPC documentation — cloud stage
 
-
 ## My understanding
+
 - A computer has network interfaces. IP addresses has attached to these interfaces. Each interface also has it's mac address.
-- we can see the interfaces via ip addr 
+- we can see the interfaces via ip addr
 - with ip route we get the route tables that is how a particular IP will pass through. for example for all the ip inside a subnet can go directly without hitting a gateway.
 - in my wsl ubuntu the ip address assigned to interface eth0 is managed by windows. windows has created a subnet 172.26.160.0/20 (my address 172.26.169.218 is one host inside it) that means in 32 bits of ipv4 address 20 bits is the network address and others are host. with in this subnet there is the gateway 172.26.160.1 through which packets with destination ip address outside of the subnet goes via this.
-- in a local network from the IP address we need to know the mac address first so that the frame is moved to that device. for that during the request initiation ARP request is sent by the kernel TCP/IP implementation software. the request is a broadcast (ff:ff:ff:ff:ff:ff), the reply comes back only to the asker. you can think of ARP request as Frames-> ARP. ARP is sibling to IP packets. IP packets can contain ICMP or TCP or UDP  packets.
+- in a local network from the IP address we need to know the mac address first so that the frame is moved to that device. for that during the request initiation ARP request is sent by the kernel TCP/IP implementation software. the request is a broadcast (ff:ff:ff:ff:ff:ff), the reply comes back only to the asker. you can think of ARP request as Frames-> ARP. ARP is sibling to IP packets. IP packets can contain ICMP or TCP or UDP packets.
 - The frame always goes to the MAC of the **next hop**: the destination itself if it is in my subnet, otherwise the gateway. e.g. a DNS query to a DNS server outside my subnet goes in a frame to the gateway's MAC. In WSL the DNS server is 10.255.255.254 on `lo`, so no ARP and no frame on the network at all → order was DNS → ARP (for gateway) → SYN.
-- If you see the idea of frame is to identify the mac address in the current subnet either gateway or  any device. so a frame lives only on one local network (one hop) — true everywhere, even on public internet links. **local** = one street / one hop (frames, MAC). **private** = IP addresses not allowed on the internet (10.x, 172.16–31.x, 192.168.x) → needs NAT.
+- If you see the idea of frame is to identify the mac address in the current subnet either gateway or any device. so a frame lives only on one local network (one hop) — true everywhere, even on public internet links. **local** = one street / one hop (frames, MAC). **private** = IP addresses not allowed on the internet (10.x, 172.16–31.x, 192.168.x) → needs NAT.
 - Frame contains the IP packet where the source IP and destination IP is mentioned. every sender (my Ubuntu too, and then every router at each hop) inspects the destination IP: if the destination IP is inside the current subnet it does ARP to get the MAC of the destination machine. if not in the same subnet through ARP it gets the mac of the gateway. and sends this frame.
 - ip route get 8.8.8.8 tells which route it used in the route table
 - ip addr tells the interfaces
-- ip neigh keeps the ARP table that is the IP to mac address , can think of a cache so that we don't need to do ARP everytime 
+- ip neigh keeps the ARP table that is the IP to mac address , can think of a cache so that we don't need to do ARP everytime
 - `lo` (127.0.0.1) is the door back into the same machine: no ARP, nothing leaves the machine. Ubuntu's localhost and Windows' localhost are different.
 - NAT rewrites the private source IP to the router's own IP and remembers it in a NAT table (ports for TCP/UDP, ICMP id for ping) so it can swap it back on the reply. My chain: Windows (NAT #1: 172.26.169.218 → 192.168.0.168) → home router (NAT #2 → public IP) → maybe ISP CGNAT (NAT #3). Normal routers don't rewrite IPs — they only lower TTL and change MACs.
 - NAT vs ARP: NAT answers "which **address**?", ARP answers "which **face** (MAC)?". Both are needed — the NAT table gives the inside IP, ARP still finds that device's MAC.
@@ -2859,10 +2879,12 @@ Your setup: WSL `eth0` = `172.26.169.218/20`, gateway `172.26.160.1` (Windows) �
 ## Session 3 — 2026-10-07 — Building a "container" by hand (network namespace + veth)
 
 ### Why namespaces (my Phase 1 answers)
+
 - Two programs on port 80 → "address already in use". An untrusted app shouldn't see all my interfaces/routes. Docker runs many containers that each think they have their own `eth0` → need **isolated copies of the network**.
 - **Network namespace** = a separate copy of the network stack: its own interfaces, route tables, ARP (neighbour) table, firewall rules **and ports/sockets** (that's why two containers can both listen on :80). It isolates only the network — files and processes are still shared (prompt stayed in `/mnt/c/Users/praty`).
 
 ### What an interface really is
+
 - An interface = kernel object for "a place packets go out / come in". Behind each one is a **driver**.
 - Steps before the driver are the same for every interface: socket → IP header → route lookup (`ip route`) → neighbour lookup (`ip neigh`/ARP) → Ethernet frame → queue (`qdisc`, tcpdump copies here) → driver "transmit this frame".
 - Only the driver differs:
@@ -2873,42 +2895,49 @@ Your setup: WSL `eth0` = `172.26.169.218/20`, gateway `172.26.160.1` (Windows) �
 - Checked with `ls -l /sys/class/net/` and `basename $(readlink /sys/class/net/eth0/device/driver)` → `hv_netvsc`.
 
 ### Lab steps and what I saw
-| Step | Command | Result |
-|---|---|---|
-| Baseline | `ip -br addr`, `ip route`, `ip netns list` | `lo`, `eth0`; 2 routes; no namespaces |
-| Create box | `sudo ip netns add box1` → `sudo ip netns exec box1 bash` | only `lo`, **DOWN**, no address, **0 routes** (all predicted ✅) |
-| Ping in empty box | `ping -c 1 127.0.0.1` | **Network is unreachable** — instant, no packet sent, no route matches |
-| `lo` up | `ip link set lo up` | `127.0.0.1` appears, `ip route` still empty, ping works ✅ |
-| Cable | `ip link add veth-host type veth peer name veth-box` | both ends appear in Ubuntu, DOWN, `M-DOWN` (= my peer is down), each has its own random MAC |
-| Plug in | `ip link set veth-box netns box1` | `veth-box` moves (same MAC `32:59:…`), Ubuntu shows `veth-host@if3` — after `@` = the peer; Ubuntu can't see box1's names, only the interface number |
-| Addresses | `10.0.0.1/24` on `veth-host`, `10.0.0.2/24` on `veth-box`, both `up` | auto routes `10.0.0.0/24 dev veth-host` / `dev veth-box` (`proto kernel`), `local 10.0.0.1` + `broadcast 10.0.0.255` in Ubuntu's local table (all predicted ✅) |
+
+| Step              | Command                                                              | Result                                                                                                                                                          |
+| ----------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Baseline          | `ip -br addr`, `ip route`, `ip netns list`                           | `lo`, `eth0`; 2 routes; no namespaces                                                                                                                           |
+| Create box        | `sudo ip netns add box1` → `sudo ip netns exec box1 bash`            | only `lo`, **DOWN**, no address, **0 routes** (all predicted ✅)                                                                                                |
+| Ping in empty box | `ping -c 1 127.0.0.1`                                                | **Network is unreachable** — instant, no packet sent, no route matches                                                                                          |
+| `lo` up           | `ip link set lo up`                                                  | `127.0.0.1` appears, `ip route` still empty, ping works ✅                                                                                                      |
+| Cable             | `ip link add veth-host type veth peer name veth-box`                 | both ends appear in Ubuntu, DOWN, `M-DOWN` (= my peer is down), each has its own random MAC                                                                     |
+| Plug in           | `ip link set veth-box netns box1`                                    | `veth-box` moves (same MAC `32:59:…`), Ubuntu shows `veth-host@if3` — after `@` = the peer; Ubuntu can't see box1's names, only the interface number            |
+| Addresses         | `10.0.0.1/24` on `veth-host`, `10.0.0.2/24` on `veth-box`, both `up` | auto routes `10.0.0.0/24 dev veth-host` / `dev veth-box` (`proto kernel`), `local 10.0.0.1` + `broadcast 10.0.0.255` in Ubuntu's local table (all predicted ✅) |
 
 ### Hidden routing tables
+
 - `ip route` shows only the **main** table. The **local** table (`ip route show table local`) holds "is this **me**?" addresses: my own IPs (`127.0.0.1`, `172.26.169.218`, `10.0.0.1`) + broadcast addresses. Filled automatically by the kernel.
 - `ip rule` = which tables are checked, in order: `0: local` → `32766: main` → `32767: default`. First "is it for me?", then "where do I send it?". (Rules can also pick tables by source = policy routing — later: multi-NIC EC2, VPNs, K8s CNIs.)
 - My own `172.26.169.218` matches both `local` (me) and `172.26.160.0/20` (neighbour) — local is checked first, so it wins. Sending to my own IP never leaves through eth0.
 
 ### Route matching
+
 - `10.0.0.0/24` = first 24 bits (first 3 numbers) must match → covers `10.0.0.0`–`10.0.0.255`. A route is built from **my own address + prefix**, not from the neighbour's address.
 - Several rules can match; **longest prefix match** wins. `default` = `0.0.0.0/0` matches everything but is least specific → only used when nothing else matches.
 
 ### Ping Ubuntu → box1 (`tcpdump -n -e -i veth-host`, `ping -c 3 10.0.0.2`)
+
 1. ARP request `5e:db… > ff:ff:ff:ff:ff:ff` "who-has 10.0.0.2 tell 10.0.0.1" — broadcast because I don't know box1's MAC yet.
 2. ARP reply sent **only to the asker** — box1 already learned Ubuntu's IP+MAC from the request.
 3. `5e:db:dc:a8:c3:e2` = Ubuntu's `veth-host`, `32:59:2c:37:1a:79` = box1's `veth-box` (the ARP reply labels it: `10.0.0.2 is-at 32:59…`).
 4. **No NAT** — no router in between and nobody configured a rewrite; NAT only happens at a router told to rewrite (usually the edge to the internet).
 5. RTT ≈ **0.19 ms** vs Windows gateway < 1 ms vs Google ~10 ms → veth just hands the frame to its peer in memory; every extra hop / real hardware adds time.
 6. ~5 s later box1 sends a **unicast** ARP "who-has 10.0.0.1" → verifying the MAC it learned passively. Linux stores passively learned entries as **STALE**, confirms them when used → **REACHABLE** (`ip neigh` shows the state). Same thing the gateway did in Session 2.
+
 - Last line `ICMP6 router solicitation` → IPv6 auto-asks "is there an IPv6 router here?" when an interface comes up; noise. `fe80::…` addresses are automatic IPv6 link-local addresses built from the MAC.
 
 ### Failure table so far
-| Error | Meaning |
-|---|---|
-| Timeout | packets dropped on the way (firewall, Security Group, host down) |
-| Refused (RST) | reached the host, nothing listening on that port |
+
+| Error                      | Meaning                                                           |
+| -------------------------- | ----------------------------------------------------------------- |
+| Timeout                    | packets dropped on the way (firewall, Security Group, host down)  |
+| Refused (RST)              | reached the host, nothing listening on that port                  |
 | **Network is unreachable** | **my own machine** has no matching route — no packet is even sent |
 
 ### ▶️ Next step
+
 1. Route quiz: predict then `ip route get 10.0.0.200` and `ip route get 10.0.1.5`.
 2. Part F: predict, then `sudo ip netns exec box1 ping -c 2 8.8.8.8` with tcpdump on `veth-host`.
 3. Phase 5: draw Ubuntu ↔ box1 from memory, then design what box1 is missing to reach the internet → Session 4 (bridge + default route + NAT/MASQUERADE, then compare with real Docker).
