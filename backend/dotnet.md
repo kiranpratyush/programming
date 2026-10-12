@@ -26,12 +26,15 @@ deterministic cleanup
 finalizers
 unmanaged resources
 Async model
-Task
+Task : Task: an object representing an operation that may not have finished yet.
+It carries the operation's state (Running / RanToCompletion / Canceled / Faulted),
+its result or exception, and lets other code await or continue when it completes.
+It is a handle to the work, not the work itself, and it does not necessarily use a thread.
 Task<T>
 async/await
 continuation model
 I/O-bound vs CPU-bound
-Task.WhenAll
+Task.WhenAll : Run till all the tasks has been completed
 Task.WhenAny
 avoiding .Result / .Wait()
 cancellation
@@ -120,6 +123,5 @@ ArrayPool<T>
 Span<T>
 Memory<T>
 BenchmarkDotNet
-
 
 reading about yield return , how compiler rewrites it. understand how an ienumerable is implemented.

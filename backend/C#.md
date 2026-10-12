@@ -71,8 +71,8 @@ Build in a new console project, `experiments/CancelLab` (`dotnet new console -n 
 
 types (learnt about primitive types int,long,decimal,float,struct,class,records)
 variables (done with implict and explicit)
-nullable types
-operators
+nullable types -> Types which can be null
+operators -> duh
 loops (done, normal for loop and foreach loop)
 methods (inside the function)
 overloads (override)
@@ -92,12 +92,12 @@ interfaces (Provides a blue print of functionality)
 abstract classes (Abstract methods and interfaces)
 generics
 generic constraints
-delegates
-Action
-Func
+delegates -> Delegates are functions passed as parameters.
+Action -> Delegate which does not return any value
+Func -> Delegate which return values
 lambdas
 events
-extension methods
+extension methods -> Create a class inside that create a static method taking the first parameter as this. use to extend the current class
 attributes
 pattern matching
 switch expressions
@@ -134,12 +134,12 @@ Task.WaitAsync
 SynchronizationContext
 TaskScheduler
 ConfigureAwait
-CancellationToken
-CancellationTokenSource
-linked cancellation tokens
-timeout cancellation
-race conditions
-critical sections
+CancellationToken (Done)
+CancellationTokenSource (Done)
+linked cancellation tokens (Done)
+timeout cancellation (Done)
+race conditions (Done)
+critical sections (Done)
 atomicity
 memory visibility
 lock / Monitor
