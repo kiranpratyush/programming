@@ -107,6 +107,11 @@ sudo sysctl -qw net.ipv4.ip_forward=1
 sudo iptables -I FORWARD -i ubuntu-priv -o "$UPLINK" -m comment --comment m5-lab -j ACCEPT
 sudo iptables -I FORWARD -i "$UPLINK" -o ubuntu-priv -m conntrack --ctstate ESTABLISHED,RELATED \
   -m comment --comment m5-lab -j ACCEPT
+# # DNS DROP rules (optional experiment). -I puts a rule at the top, so these must come AFTER
+# # the ACCEPTs above, otherwise the ACCEPTs end up first and the DROPs never match.
+# sudo iptables -I FORWARD 1 -i ubuntu-priv -p udp --dport 53 -m comment --comment m5-lab -j DROP
+# sudo iptables -I FORWARD 1 -o ubuntu-priv -p udp --sport 53 -m comment --comment m5-lab -j DROP
+# sudo iptables -I INPUT 1 -i ubuntu-priv -p udp --dport 53 -m comment --comment m5-lab -j DROP
 # The source of a lab packet is the host (10.10.0.2, 10.10.0.66, ...), not 10.10.0.106.
 # MASQUERADE uses the current address of the uplink (172.x, it can change after a WSL restart).
 sudo iptables -t nat -A POSTROUTING -s 10.10.0.0/24 -o "$UPLINK" -m comment --comment m5-lab -j MASQUERADE
