@@ -60,9 +60,26 @@ Write your answers under "My design" at the end of this file.
 
 Questions:
 
+1. I'll put `ns-auth`,ns-res , ns-auth-b attached to R4 , I am planning to put a bridge and to the bridge these ns-res,ns-auth,ns-auth-b will be connected via eth-pair, one more pair will be connected to the R4 and the bridge. The bride is a Link layer device so it does not needs an IP address in its interface.
+2. This will create a new subnet , in this new subnet we need 3 devices + 1 gateway + 2(network and broad cast address) = 6 addresses. round it to 8 addresses so host bit 3 and network bit is 29 bits
+3. As I can not reuse the 10.10.0.108 so I can use the 10.10.0.112/29-10.10.0.119/29 with a bridge naming
+
+bridge: br-dns
+network address: 10.10.0.112/29
+broadcast address : 10.10.0.119/29
+R4 ns-r4-eth4 : 10.10.0.113/29
+ns-auth : 10.10.0.114/29 (ideally the interface ns-auth-eth0)
+ns-res: 10.10.0.115/29 (ideally the interface ns-res-eth0)
+ns-auth-b: 10.10.0.116/29 (ideally the interface ns-auth-b-eth0)
+so in each host,edge,routers except R4,ubuntu rootnamespace there will be single route should be added to ns-res, as the other servers are in the bridge and we won't directly connect with them we don't need them in the route table.
+
 - Why does an NS record that points to a name **inside** its own zone need a glue A record?
 - What does each SOA field do (serial, refresh, retry, expire, minimum)? Which one controls negative caching?
 - `/etc/hosts`, the stub resolver in glibc, the recursive resolver, the authoritative server: who reads which file, and who sends packets?
+
+#### My answer
+
+1. I am planning to attach ns-auth
 
 ### My Design:
 
