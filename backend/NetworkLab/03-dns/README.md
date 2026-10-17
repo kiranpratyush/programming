@@ -71,7 +71,21 @@ R4 ns-r4-eth4 : 10.10.0.113/29
 ns-auth : 10.10.0.114/29 (ideally the interface ns-auth-eth0)
 ns-res: 10.10.0.115/29 (ideally the interface ns-res-eth0)
 ns-auth-b: 10.10.0.116/29 (ideally the interface ns-auth-b-eth0)
-so in each host,edge,routers except R4,ubuntu rootnamespace there will be single route should be added to ns-res, as the other servers are in the bridge and we won't directly connect with them we don't need them in the route table.
+Route table changes for 10.10.0.112/29 (DNS subnet):
+
+| Node | New route | Why |
+| --- | --- | --- |
+| hosts (ha1-3, hb1-2) | none | default gateway already reaches R1 / R3 |
+| ns-r1 | none | `default via 10.10.0.90` (R4 eth0) already covers it |
+| ns-r2 | `10.10.0.112/29 via 10.10.0.94` (R4 eth1) | R2 has no default route |
+| ns-r3 | none | `default via 10.10.0.98` (R4 eth2) already covers it |
+| ns-r4 | none | directly connected via ns-r4-eth4 |
+| ns-edge | `10.10.0.112/29 via 10.10.0.101` (R4 eth3) | return path for internet replies to ns-res |
+| ubuntu (root ns) | `10.10.0.112/29 via 10.10.0.105` (edge eth1) | add to the `for s in ...` loop, same as the other subnets |
+| ns-auth, ns-res, ns-auth-b | `default via 10.10.0.113` (R4 eth4) | reaches both LANs through R4, and ns-res reaches the internet via edge, ubuntu and NAT |
+
+The existing `MASQUERADE -s 10.10.0.0/24` already covers 10.10.0.112/29.
+
 
 - Why does an NS record that points to a name **inside** its own zone need a glue A record?
 - What does each SOA field do (serial, refresh, retry, expire, minimum)? Which one controls negative caching?

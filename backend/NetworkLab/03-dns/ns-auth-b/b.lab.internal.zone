@@ -1,0 +1,14 @@
+$ORIGIN b.lab.internal.
+$TTL 3600
+
+@   IN SOA ns-auth-b.b.lab.internal. pratyush.gmail.com. (
+        2026101701 ; serial
+        3600       ; refresh
+        900        ; retry
+        604800     ; expire
+        300 )      ; negative cache TTL
+
+@           IN NS  ns-auth-b.b.lab.internal.
+ns-auth-b   IN A   10.10.0.116
+
+hb1         IN A   10.10.0.66

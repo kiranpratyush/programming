@@ -6,12 +6,12 @@ Started: 2026-10-14
 
 | Milestone                                               | State                    |
 | ------------------------------------------------------- | ------------------------ | ------ |
-| D0 design on paper                                      | Not started. Start here. |
-| D1 observe DNS in M5                                    |                          | (Done) |
-| D2 authoritative (NSD)                                  |                          |
-| D3 recursive (Unbound)                                  |                          |
+| D0 design on paper                                      | Done                     |
+| D1 observe DNS in M5                                    | Done                     | (Done) |
+| D2 authoritative (NSD)                                  | Done                     |
+| D3 recursive (Unbound)                                  | Done                     |
 | D4 reverse DNS                                          |                          |
-| D5 delegation                                           |                          |
+| D5 delegation                                           | Done                     |
 | D6 real world + TTL/pooling                             |                          |
 | Artifact: "How a name becomes an address in my network" |                          |
 
